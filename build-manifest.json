@@ -1,0 +1,21 @@
+{
+  "revision": 30,
+  "profile": "F8 freelook only",
+  "compiler": {
+    "version": "Zig 0.14.1",
+    "url": "https://ziglang.org/download/0.14.1/zig-x86_64-windows-0.14.1.zip",
+    "sha256": "554f5378228923ffd558eac35e21af020c73789d87afeabf4bfd16f2e6feed2c"
+  },
+  "pointerSource": {
+    "url": "https://github.com/Burnt-o/HaloCheckpointManager",
+    "commit": "c5f4069a9e79060d0eeb85105636fe17b6b77563"
+  },
+  "reclaimer": {
+    "version": "0.9.23",
+    "sha256": "ceef542ac17980d178e281ebf510b4aaaf28ef650a288f1d68e8250731ad7e70",
+    "source": "https://github.com/ProjectReclaimer/project-reclaimer-releases/releases/tag/v0.9.23"
+  },
+  "multiplayer": "Not yet tested with a second player",
+  "sourceRevision": "073ff42",
+  "sourceNote": "Freelook-only files extracted from the local Halo3-Vehicle-Freelook working repository."
+}
