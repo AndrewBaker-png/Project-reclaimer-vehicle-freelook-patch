@@ -1,4 +1,4 @@
-# Project Reclaimer Freelook
+# Project Reclaimer Aerial Vehicle Freelook Patch
 
 Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. This is the standalone **revision 30** free-look build for **Project Reclaimer 0.9.23** on Windows x64.
 
@@ -6,7 +6,7 @@ Hold **F8** in a Halo 3 vehicle to look around independently of the native camer
 
 ## Download and install
 
-1. Open [Releases](https://github.com/AndrewBaker-png/Project-Reclaimer-Freelook/releases) and download `Halo3-Freelook-Only-MP-r30.zip`. The GitHub source-code ZIP is for developers.
+1. Open [Releases](https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch/releases) and download `Halo3-Freelook-Only-MP-r30.zip`. The GitHub source-code ZIP is for developers.
 2. Extract the entire mod ZIP to a writable folder. Keep all included files together.
 3. Fully exit any previous Reclaimer session. A stopped DLL remains resident until the client exits.
 4. Run `Start-Reclaimer-Freelook-Only.cmd`, then open Reclaimer normally. The one-shot loader waits up to 30 minutes for the Halo 3 engine. It can also be started after entering the game.
