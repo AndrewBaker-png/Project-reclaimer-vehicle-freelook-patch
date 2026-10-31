@@ -16,7 +16,9 @@ try {
     @{Name='math_tests';Sources=@('tests/math_tests.cpp')},
     @{Name='hook_tests';Sources=@('tests/hook_tests.cpp','tests/hook_test_target.S','src/hooks.S')+$minhook},
     @{Name='camera_copy_tests';Sources=@('tests/camera_copy_tests.cpp')},
-    @{Name='freelook_only_tests';Sources=@('tests/freelook_only_tests.cpp','src/hooks.S')+$minhook}
+    @{Name='freelook_only_tests';Sources=@('tests/freelook_only_tests.cpp','src/hooks.S')+$minhook},
+    @{Name='module_path_tests';Sources=@('tests/module_path_tests.cpp')},
+    @{Name='runtime_control_tests';Sources=@('tests/runtime_control_tests.cpp')}
   )
   foreach($test in $tests){
     $exe=Join-Path $build ($test.Name+'.exe')
@@ -29,6 +31,20 @@ try {
   if($LASTEXITCODE){throw 'Freelook-only runtime build failed'}
   & $zig c++ @common 'src/launcher.cpp' '-municode' '-lbcrypt' '-o' (Join-Path $build 'Halo3Freelook.exe')
   if($LASTEXITCODE){throw 'Freelook-only launcher build failed'}
+  foreach($name in @('loader_test_launcher','runtime_lifecycle_tests')){
+    & $zig c++ @common ('tests/'+$name+'.cpp') '-municode' '-o' (Join-Path $build ($name+'.exe'))
+    if($LASTEXITCODE){throw ($name+' build failed')}
+  }
+  $powershell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+  & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tests\loader_tests.ps1') -FixtureExecutable (Join-Path $build 'loader_test_launcher.exe') -WorkDirectory (Join-Path $build 'loader-test-runs')
+  if($LASTEXITCODE){throw 'Loader lifecycle regression tests failed'}
+  $lifecycle=Join-Path $build ('runtime-test-'+[Guid]::NewGuid().ToString('N'))
+  New-Item -ItemType Directory -Path $lifecycle | Out-Null
+  $testDll=Join-Path $lifecycle 'Halo3VehicleFreelook-only-mp-r30.dll'
+  Copy-Item -LiteralPath (Join-Path $build 'Halo3VehicleFreelook-only-mp-r30.dll') -Destination $testDll
+  Copy-Item -LiteralPath 'freelook-only.ini' -Destination (Join-Path $lifecycle 'freelook.ini')
+  & (Join-Path $build 'runtime_lifecycle_tests.exe') $testDll 'probe-engine-worker'
+  if($LASTEXITCODE){throw 'Actual DLL lifecycle regression test failed'}
   & node (Join-Path $root 'tools\verify-freelook-only.cjs')
   if($LASTEXITCODE){throw 'Freelook-only binary isolation check failed'}
   Copy-Item -LiteralPath 'freelook-only.ini' -Destination (Join-Path $build 'freelook.ini') -Force
@@ -38,11 +54,11 @@ try {
   $files=@('Halo3Freelook.exe','Halo3VehicleFreelook-only-mp-r30.dll','freelook.ini','README.txt','Start-Reclaimer-Freelook-Only.ps1','Start-Reclaimer-Freelook-Only.cmd','Stop-Reclaimer-Freelook-Only.cmd','MINHOOK-LICENSE.txt','HCM-LICENSE.txt')
   $hashes=[ordered]@{}
   foreach($name in $files){$hashes[$name]=(Get-FileHash (Join-Path $build $name) -Algorithm SHA256).Hash}
-  $manifest=[ordered]@{revision=30;profile='F8 freelook only';hooks=@('input X 0x187b89','input Y 0x187bb2','camera 0x17eb20');checks='201 camera bases; 10,000 native hooks; 100,000 camera copies; actual F8 runtime hold/release, orbit/FOV isolation, exit, death, focus, menu lockout, vehicle identity and camera turnover; PE imports checked for absence of graphics/network libraries and HUD/mesh dependencies';multiplayer='Not yet tested with a second player';cockpit=$false;visor=$false;hud=$false;graphicsHooks=$false;customAssets=$false;files=$hashes}
+  $manifest=[ordered]@{revision=30;build='r30-audit-fixes';profile='F8 freelook only';hooks=@('input X 0x187b89','input Y 0x187bb2','camera 0x17eb20');checks='201 camera bases; 10,000 native hooks; 100,000 camera copies; actual F8 runtime hold/release, orbit/FOV isolation, exit, death, focus, menu lockout, vehicle identity, 128 revisited cameras and complete restoration; bounded module paths; runtime shutdown acknowledgment; PowerShell startup/cancellation/refusal/pending-load cases; actual DLL cancellation during startup; PE imports checked for absence of graphics/network libraries and HUD/mesh dependencies';multiplayer='Not yet tested with a second player';cockpit=$false;visor=$false;hud=$false;graphicsHooks=$false;customAssets=$false;files=$hashes}
   [IO.File]::WriteAllText((Join-Path $build 'manifest.json'),($manifest | ConvertTo-Json -Depth 5)+[Environment]::NewLine)
   $release=Join-Path $root 'release'
   New-Item -ItemType Directory -Path $release -Force | Out-Null
-  $zip=Join-Path $release 'Halo3-Freelook-Only-MP-r30.zip'
+  $zip=Join-Path $release 'Halo3-Freelook-Only-MP-r30-audit-fixes.zip'
   $paths=@($files+@('manifest.json') | ForEach-Object {Join-Path $build $_})
   Compress-Archive -LiteralPath $paths -DestinationPath $zip -Force
   Write-Output ('Freelook-only MP package ready: '+$zip)

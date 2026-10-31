@@ -1,3 +1,13 @@
+# Unreleased — r30 audit fixes
+
+- Reject oversized or truncated runtime DLL paths before injection.
+- Retain every outstanding camera baseline and restore all reused camera buffers after F8 release. Revisited cameras no longer compound their orbit after the original eight-slot cache would have evicted them.
+- Wait for an in-progress load and runtime shutdown acknowledgment before reporting cancellation complete. Indeterminate loads remain marked in `loader-state.json` and cannot be reported successfully cancelled while no stop event is available.
+- Publish the runtime's stop handles before DLL loading returns, and distinguish confirmed shutdown from a missing or timed-out acknowledgment.
+- Add path, camera ownership/lifetime, native shutdown, actual DLL startup cancellation, and PowerShell loader regression tests.
+
+Local build artifact: `Halo3-Freelook-Only-MP-r30-audit-fixes.zip`. Restart the client before loading it. Older r30 runtimes receive stop requests but cannot acknowledge shutdown; the updated helper reports this and asks for a client restart. No multiplayer certification or new public release is implied.
+
 # r30 — F8 Freelook (Experimental)
 
 Standalone vehicle free-look for Project Reclaimer 0.9.23 on Windows x64.

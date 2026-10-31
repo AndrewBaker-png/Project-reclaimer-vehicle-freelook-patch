@@ -1,5 +1,6 @@
 {
   "revision": 30,
+  "build": "r30-audit-fixes",
   "profile": "F8 freelook only",
   "compiler": {
     "version": "Zig 0.14.1",
@@ -17,5 +18,5 @@
   },
   "multiplayer": "Not yet tested with a second player",
   "sourceRevision": "073ff42",
-  "sourceNote": "Freelook-only files extracted from the local Halo3-Vehicle-Freelook working repository."
+  "sourceNote": "Freelook-only files originally extracted from the local Halo3-Vehicle-Freelook working repository; the current standalone source includes unreleased camera, path and cancellation audit fixes."
 }

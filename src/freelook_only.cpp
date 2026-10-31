@@ -8,10 +8,12 @@
 #include <share.h>
 #include <intrin.h>
 #include <tlhelp32.h>
+#include <new>
 #include "MinHook.h"
 #include "freelook_math.h"
 #include "camera_copy.h"
 #include "verified_build.h"
+#include "runtime_control.h"
 #ifndef FREELOOK_ONLY
 #error Build this isolated runtime with FREELOOK_ONLY.
 #endif
@@ -37,6 +39,8 @@ static float maxX=0,maxY=0;
 static LONG64 cameraPerfTicks=0,cameraPerfCalls=0;
 static LARGE_INTEGER perfFrequency;
 static HANDLE stopEvent=nullptr;
+static HANDLE stoppedEvent=nullptr;
+static bool hooksMayBeEnabled=false;
 static FILE* logFile=nullptr;
 static HMODULE selfModule=nullptr;
 static LONG enabled=0;
@@ -107,21 +111,48 @@ static void onAxis(void* savedFx,bool horizontal){
 extern "C" void onInputX(void* savedFx){onAxis(savedFx,true);}
 extern "C" void onInputY(void* savedFx){onAxis(savedFx,false);}
 struct CameraCache {uintptr_t address=0;freelook::Vec3 basePosition{},baseForward{},baseUp{},writtenPosition{},writtenForward{},writtenUp{};bool modified=false;};
-static CameraCache cameras[8];
+struct CameraCacheBlock {CameraCache entries[8];CameraCacheBlock* next=nullptr;};
+static CameraCacheBlock firstCameraBlock;
+// Only inspect an incoming, engine-owned camera. Never dereference old addresses
+// to reclaim entries: an outstanding pose may belong to another thread/snapshot.
+static CameraCache* cameraCache(uintptr_t address,bool create){
+  CameraCache* reusable=nullptr;
+  CameraCacheBlock* last=&firstCameraBlock;
+  for(auto* block=&firstCameraBlock;block;block=block->next){
+    last=block;
+    for(auto& entry:block->entries){
+      if(entry.address==address)return &entry;
+      if(!entry.modified&&!reusable)reusable=&entry;
+    }
+  }
+  if(!create)return nullptr;
+  if(!reusable){
+    auto* block=new(std::nothrow) CameraCacheBlock{};
+    if(!block)return nullptr; // Leave the native pose untouched on allocation failure.
+    last->next=block;reusable=&block->entries[0];
+  }
+  *reusable={};reusable->address=address;return reusable;
+}
 static bool same(freelook::Vec3 a,freelook::Vec3 b){return memcmp(&a,&b,sizeof a)==0;}
 static uintptr_t applyCamera(uintptr_t camera){
   InterlockedIncrement64(&cameraFrames);
   if(!camera)return camera;
   AcquireSRWLockExclusive(&stateLock);
-  if(!down(holdKey)&&!active&&!returning){ReleaseSRWLockExclusive(&stateLock);return camera;}
+  CameraCache* cache=cameraCache(camera,false);
+  bool idle=!down(holdKey)&&!active&&!returning;
+  if(idle&&(!cache||!cache->modified)){ReleaseSRWLockExclusive(&stateLock);return camera;}
   LARGE_INTEGER perfStart;QueryPerformanceCounter(&perfStart);
-  CameraCache* cache=nullptr;
-  for(auto& c:cameras)if(c.address==camera){cache=&c;break;}
-  if(!cache)for(auto& c:cameras)if(!c.address){c.address=camera;cache=&c;break;}
-  if(!cache){static size_t next=0;cache=&cameras[next++%8];*cache={};cache->address=camera;}
+  if(!cache)cache=cameraCache(camera,true);
+  if(!cache){ReleaseSRWLockExclusive(&stateLock);return camera;}
   freelook::Vec3 position,forward,up;
   if(!read(camera,position)||!read(camera+0x28,forward)||!read(camera+0x34,up)){ReleaseSRWLockExclusive(&stateLock);return camera;}
   bool ours=cache->modified&&same(position,cache->writtenPosition)&&same(forward,cache->writtenForward)&&same(up,cache->writtenUp);
+  if(!ours)cache->modified=false;
+  if(idle){
+    if(ours){memcpy((void*)camera,&cache->basePosition,12);memcpy((void*)(camera+0x28),&cache->baseForward,12);memcpy((void*)(camera+0x34),&cache->baseUp,12);}
+    cache->modified=false;
+    ReleaseSRWLockExclusive(&stateLock);return camera;
+  }
   // Cancel the orbit across focus loss, death, exit or a vehicle identity change.
   // Restore only a camera pose that is still exactly our own last output.
   uint32_t currentVehicle=0xffffffff;
@@ -174,12 +205,12 @@ static uintptr_t __fastcall cameraResultHook(int user){
 }
 
 static bool checkBytes(uintptr_t address,const unsigned char* expected,size_t size){unsigned char bytes[32];return size<=sizeof bytes&&ReadProcessMemory(GetCurrentProcess(),(void*)address,bytes,size,nullptr)&&memcmp(bytes,expected,size)==0;}
-static DWORD WINAPI worker(void*){
+static DWORD runWorker(){
   QueryPerformanceFrequency(&perfFrequency);
   wchar_t path[MAX_PATH];GetModuleFileNameW(selfModule,path,MAX_PATH);
   wchar_t* slash=wcsrchr(path,L'\\');if(slash)slash[1]=0;
   wchar_t ini[MAX_PATH],logPath[MAX_PATH];swprintf(ini,MAX_PATH,L"%lsfreelook.ini",path);swprintf(logPath,MAX_PATH,L"%lsfreelook.log",path);
-  logFile=_wfsopen(logPath,L"a",_SH_DENYNO);log("freelook-only MP test revision 30 starting");
+  logFile=_wfsopen(logPath,L"a",_SH_DENYNO);log("freelook-only MP test revision 30 (audit fixes) starting");
   reclaimer=wcsstr(GetCommandLineW(),L"probe-engine-worker")!=nullptr;
   if(reclaimer){HANDLE snapshot=CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);PROCESSENTRY32W pe={sizeof pe};if(Process32FirstW(snapshot,&pe))do{if(pe.th32ProcessID==GetCurrentProcessId()){uiParent=pe.th32ParentProcessID;break;}}while(Process32NextW(snapshot,&pe));CloseHandle(snapshot);}
   if(!reclaimer&&!wcsstr(GetCommandLineW(),L"-no-eac")&&!wcsstr(GetCommandLineW(),L"-eac-nop-loaded")){log("REFUSED: use MCC Anti-Cheat Disabled launch option");return 1;}
@@ -189,9 +220,8 @@ static DWORD WINAPI worker(void*){
   smoothingSeconds=freelook::clamp(GetPrivateProfileIntW(L"Freelook",L"SmoothingMs",40,ini)/1000.f,0.f,.3f);
   returnSeconds=freelook::clamp(GetPrivateProfileIntW(L"Freelook",L"ReturnMs",180,ini)/1000.f,.01f,1.f);
   if(holdKey<1||holdKey>254||holdKey==86||(reclaimer&&holdKey==66)){log("REFUSED: invalid hold key or voice-chat conflict");return 2;}
-  wchar_t eventName[100];swprintf(eventName,100,L"Local\\Halo3VehicleFreelookOnlyMP30Stop-%lu",GetCurrentProcessId());
-  stopEvent=CreateEventW(nullptr,TRUE,FALSE,eventName);if(!stopEvent)return 3;
   while(!(haloBase=(uintptr_t)GetModuleHandleW(L"halo3.dll"))){if(WaitForSingleObject(stopEvent,100)==WAIT_OBJECT_0)return 0;}
+  if(WaitForSingleObject(stopEvent,0)==WAIT_OBJECT_0)return 0;
   static_assert(sizeof verifiedHookSites/sizeof verifiedHookSites[0]==3);
   for(const auto& site:verifiedHookSites)if(!checkBytes(haloBase+site.rva,site.bytes,16)){log("REFUSED: unsupported or modified hook sites");return 4;}
   if(MH_Initialize()!=MH_OK)return 5;
@@ -199,9 +229,11 @@ static DWORD WINAPI worker(void*){
   const Callback callbacks[]={{(void*)inputXHook,&inputXTrampoline},{(void*)inputYHook,&inputYTrampoline},{(void*)cameraResultHook,&cameraTrampoline}};
   static_assert(sizeof callbacks/sizeof callbacks[0]==sizeof verifiedHookSites/sizeof verifiedHookSites[0]);
   for(size_t i=0;i<3;i++)if(MH_CreateHook((void*)(haloBase+verifiedHookSites[i].rva),callbacks[i].hook,callbacks[i].trampoline)!=MH_OK){log("hook creation failed");MH_Uninitialize();return 6;}
+  if(WaitForSingleObject(stopEvent,0)==WAIT_OBJECT_0){MH_Uninitialize();return 0;}
   InterlockedExchange(&enabled,1);
   for(const auto& site:verifiedHookSites)MH_QueueEnableHook((void*)(haloBase+site.rva));
-  if(MH_ApplyQueued()!=MH_OK){InterlockedExchange(&enabled,0);MH_DisableHook(MH_ALL_HOOKS);log("hook activation failed");return 7;}
+  hooksMayBeEnabled=true;
+  if(MH_ApplyQueued()!=MH_OK){InterlockedExchange(&enabled,0);hooksMayBeEnabled=MH_DisableHook(MH_ALL_HOOKS)!=MH_OK;log("hook activation failed");return 7;}
   log("ACTIVE: exactly 3 input/camera hooks; F8 orbit only; no F7/F9 controls, cockpit, visor, HUD, graphics hooks or asset loading");
   ULONGLONG lastStatus=GetTickCount64();
   while(WaitForSingleObject(stopEvent,33)==WAIT_TIMEOUT){
@@ -211,9 +243,36 @@ static DWORD WINAPI worker(void*){
   }
   InterlockedExchange(&enabled,0);
   // Retain trampolines/module until process exit: native callbacks can be in flight.
-  if((uintptr_t)GetModuleHandleW(L"halo3.dll")==haloBase)for(const auto& site:verifiedHookSites)MH_DisableHook((void*)(haloBase+site.rva));
+  bool disabled=true;
+  if((uintptr_t)GetModuleHandleW(L"halo3.dll")==haloBase)for(const auto& site:verifiedHookSites){
+    auto status=MH_DisableHook((void*)(haloBase+site.rva));
+    if(status!=MH_OK&&status!=MH_ERROR_DISABLED)disabled=false;
+  }
+  hooksMayBeEnabled=!disabled;
+  if(!disabled){log("ERROR: could not confirm every hook was disabled; restart client");return 8;}
   log("freelook-only stopped; restart client before loading again");
   // Log remains open until process exit so an already-running callback is safe.
   return 0;
 }
-BOOL WINAPI DllMain(HINSTANCE module,DWORD reason,LPVOID){if(reason==DLL_PROCESS_ATTACH){selfModule=module;DisableThreadLibraryCalls(module);HANDLE t=CreateThread(nullptr,0,worker,nullptr,0,nullptr);if(t)CloseHandle(t);}return TRUE;}
+static DWORD WINAPI worker(void*){
+  DWORD result=runWorker();
+  if(!hooksMayBeEnabled)SetEvent(stoppedEvent);
+  return result;
+}
+BOOL WINAPI DllMain(HINSTANCE module,DWORD reason,LPVOID){
+  if(reason==DLL_PROCESS_ATTACH){
+    selfModule=module;DisableThreadLibraryCalls(module);
+    // Publish stop handles synchronously: a successful LoadLibrary result must
+    // never precede the runtime becoming stoppable. Do not wait in DllMain.
+    wchar_t name[100];
+    swprintf(name,100,freelook::stopEventPattern,GetCurrentProcessId());
+    stopEvent=CreateEventW(nullptr,TRUE,FALSE,name);
+    swprintf(name,100,freelook::stoppedEventPattern,GetCurrentProcessId());
+    stoppedEvent=CreateEventW(nullptr,TRUE,FALSE,name);
+    if(!stopEvent||!stoppedEvent){if(stopEvent)CloseHandle(stopEvent);if(stoppedEvent)CloseHandle(stoppedEvent);return FALSE;}
+    HANDLE t=CreateThread(nullptr,0,worker,nullptr,0,nullptr);
+    if(!t){CloseHandle(stopEvent);CloseHandle(stoppedEvent);return FALSE;}
+    CloseHandle(t);
+  }
+  return TRUE;
+}

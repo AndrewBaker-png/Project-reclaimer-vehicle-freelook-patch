@@ -1,4 +1,4 @@
-Freelook-only multiplayer test - revision 30
+Freelook-only multiplayer test - revision 30, audit fixes (unreleased)
 
 1. Fully close any old Reclaimer session. A stopped cockpit DLL still stays
    resident until the client exits. Do not launch the revision 29 helper.
@@ -15,8 +15,12 @@ Freelook-only multiplayer test - revision 30
 5. Stop-Reclaimer-Freelook-Only.cmd cancels a pending load and stops an active
    runtime. Ctrl+Shift+F10 stops an active runtime only.
    Restart the client before loading this build again or switching builds.
+   The stop helper waits for the loader and runtime shutdown acknowledgment.
+   If completion cannot be confirmed, it reports an error: close the client
+   before trying again. Old r30 DLLs cannot acknowledge shutdown; restart them.
 
 loader-state.json reports waiting/loading/loaded/refused/cancelled/expired.
+It also records loadMayBePending when a load has not completed conclusively.
 loader.log records loader checks; freelook.log records actual DLL activation.
 The loader does not install a Windows service or permanent startup entry.
 Run the start helper again for a later client session. It never retries a
@@ -47,8 +51,12 @@ Configuration: freelook.ini beside Halo3Freelook.exe. F8 is key 119;
 InvertVertical=1 retains the requested flipped freelook pitch, sensitivity
 1000 retains native sensitivity, smoothing is 40 ms and return is 180 ms.
 Restart the client and reload after changing configuration.
+If the launcher reports an installation path that is too long, move the entire
+extracted mod folder to a shorter path, such as C:\Mods\Freelook.
 
 Build: Build-Freelook-Only.ps1. The package manifest lists hashes and checks.
+The local audit-fixes package retains the original r30 runtime filename and
+adds camera restoration, path-boundary and loader cancellation regressions.
 Source runtime: src/freelook_only.cpp, with the shared verified input/camera
 sites, math and MinHook stubs. Supported client is pinned Reclaimer 0.9.23.
 MCC requires its Anti-Cheat Disabled launch option and is not flight-tested.

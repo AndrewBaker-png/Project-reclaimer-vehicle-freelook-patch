@@ -7,6 +7,8 @@
 #include <cwchar>
 #include <cstring>
 #include "verified_build.h"
+#include "module_path.h"
+#include "runtime_control.h"
 #ifdef FREELOOK_ONLY
 static const wchar_t runtimeDllName[]=L"Halo3VehicleFreelook-only-mp-r30.dll";
 static const wchar_t stopEventPattern[]=L"Local\\Halo3VehicleFreelookOnlyMP30Stop-%lu";
@@ -16,8 +18,9 @@ static const wchar_t runtimeDllName[]=L"Halo3VehicleFreelook-native-r29.dll";
 static const wchar_t stopEventPattern[]=L"Local\\Halo3VehicleFreelookNativeR29Stop-%lu";
 #endif
 static bool reclaimerMode=false;
+static bool ambiguousGame=false;
 static uintptr_t module(DWORD pid,const wchar_t* name,wchar_t* path=nullptr){uintptr_t base=0;HANDLE s=CreateToolhelp32Snapshot(TH32CS_SNAPMODULE|TH32CS_SNAPMODULE32,pid);MODULEENTRY32W e={sizeof e};if(Module32FirstW(s,&e))do{if(!_wcsicmp(e.szModule,name)){base=(uintptr_t)e.modBaseAddr;if(path)wcscpy(path,e.szExePath);break;}}while(Module32NextW(s,&e));CloseHandle(s);return base;}
-static DWORD findGame(){DWORD pid=0;HANDLE s=CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);PROCESSENTRY32W e={sizeof e};if(Process32FirstW(s,&e))do{bool candidate=reclaimerMode?(wcsstr(e.szExeFile,L"project-reclaimer-client")&&module(e.th32ProcessID,L"halo3.dll")):!_wcsicmp(e.szExeFile,L"MCC-Win64-Shipping.exe");if(candidate){if(pid){CloseHandle(s);return 0;}pid=e.th32ProcessID;}}while(Process32NextW(s,&e));CloseHandle(s);return pid;}
+static DWORD findGame(){DWORD pid=0;HANDLE s=CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);PROCESSENTRY32W e={sizeof e};if(Process32FirstW(s,&e))do{bool candidate=reclaimerMode?(wcsstr(e.szExeFile,L"project-reclaimer-client")&&module(e.th32ProcessID,L"halo3.dll")):!_wcsicmp(e.szExeFile,L"MCC-Win64-Shipping.exe");if(candidate){if(pid){ambiguousGame=true;CloseHandle(s);return 0;}pid=e.th32ProcessID;}}while(Process32NextW(s,&e));CloseHandle(s);return pid;}
 static bool commandLine(HANDLE process,wchar_t* out,size_t count){
  using Query=LONG(NTAPI*)(HANDLE,PROCESSINFOCLASS,PVOID,ULONG,PULONG);
  auto query=(Query)GetProcAddress(GetModuleHandleW(L"ntdll.dll"),"NtQueryInformationProcess");
@@ -38,9 +41,18 @@ static bool hashFile(const wchar_t* path,const char* expected){
 }
 int wmain(int argc,wchar_t** argv){
  bool probe=false,stop=false;for(int i=1;i<argc;i++){if(!wcscmp(argv[i],L"--reclaimer"))reclaimerMode=true;else if(!wcscmp(argv[i],L"--probe"))probe=true;else if(!wcscmp(argv[i],L"--stop"))stop=true;else {puts("Usage: Halo3Freelook [--reclaimer] [--probe | --stop]");return 20;}}
- DWORD pid=findGame();if(!pid){puts(reclaimerMode?"Open one Reclaimer session and load a private Halo 3 test game, then try again.":"Start one MCC session using Anti-Cheat Disabled (Mods and Limited Services), then try again.");return 1;}
+ DWORD pid=findGame();if(!pid){if(ambiguousGame){puts("Multiple game sessions found; cannot safely select a runtime. Close the extra sessions and try again.");return 25;}puts(reclaimerMode?"Open one Reclaimer session and load a private Halo 3 test game, then try again.":"Start one MCC session using Anti-Cheat Disabled (Mods and Limited Services), then try again.");return 1;}
  wchar_t eventName[100];swprintf(eventName,100,stopEventPattern,pid);
- if(stop){HANDLE event=OpenEventW(EVENT_MODIFY_STATE,FALSE,eventName);if(!event){puts("No running freelook instance found.");return 2;}SetEvent(event);CloseHandle(event);puts("Stop requested. Restart the game before loading this prototype again.");return 0;}
+ if(stop){
+#ifdef FREELOOK_ONLY
+   auto result=freelook::stopRuntime(pid);
+   if(result==freelook::StopResult::absent){puts("No running freelook instance found.");return 2;}
+   if(result!=freelook::StopResult::stopped){puts("Stop requested, but shutdown could not be confirmed. Restart the client; older runtimes cannot acknowledge shutdown.");return 23;}
+   puts("Freelook hooks disabled. Restart the client before loading again.");return 0;
+#else
+   HANDLE event=OpenEventW(EVENT_MODIFY_STATE,FALSE,eventName);if(!event){puts("No running freelook instance found.");return 2;}SetEvent(event);CloseHandle(event);puts("Stop requested. Restart the game before loading this prototype again.");return 0;
+#endif
+ }
 #ifdef FREELOOK_ONLY
  // A fresh process ensures previous cockpit/render hooks and helpers are absent,
  // including a stopped revision whose DLL remains resident for callback safety.
@@ -61,7 +73,8 @@ int wmain(int argc,wchar_t** argv){
  CloseHandle(process);
  printf("Verified %s PID %lu, runtime, exact client/Halo 3 SHA256 hashes and all %zu live hook sites.\n",reclaimerMode?"Reclaimer":"MCC",pid,sizeof verifiedHookSites/sizeof verifiedHookSites[0]);
  if(probe){puts("Probe only; no process memory changed.");return 0;}
- wchar_t dll[MAX_PATH];GetModuleFileNameW(nullptr,dll,MAX_PATH);wchar_t* p=wcsrchr(dll,L'\\');p[1]=0;wcscat(dll,runtimeDllName);
+ wchar_t dll[MAX_PATH];
+ if(!freelook::siblingModulePath(nullptr,runtimeDllName,dll)){puts("Cannot resolve the runtime DLL path, or the installation path is too long. Move the mod to a shorter folder. No injection attempted.");return 24;}
  if(GetFileAttributesW(dll)==INVALID_FILE_ATTRIBUTES){puts("Prototype DLL missing beside launcher.");return 9;}
  HANDLE modules=CreateToolhelp32Snapshot(TH32CS_SNAPMODULE|TH32CS_SNAPMODULE32,pid);MODULEENTRY32W mod={sizeof mod};bool already=false;
  if(Module32FirstW(modules,&mod))do{if(!_wcsicmp(mod.szModule,runtimeDllName))already=true;}while(Module32NextW(modules,&mod));CloseHandle(modules);
@@ -81,7 +94,8 @@ int wmain(int argc,wchar_t** argv){
  HANDLE thread=CreateRemoteThread(process,nullptr,0,remoteLoader,remote,0,nullptr);if(!thread){printf("Load failed: %lu\n",GetLastError());VirtualFreeEx(process,remote,0,MEM_RELEASE);CloseHandle(process);return 14;}
  DWORD wait=WaitForSingleObject(thread,15000),result=0;GetExitCodeThread(thread,&result);CloseHandle(thread);
  if(wait==WAIT_OBJECT_0)VirtualFreeEx(process,remote,0,MEM_RELEASE);CloseHandle(process);
- if(wait!=WAIT_OBJECT_0||result==0){puts("DLL load failed or is still pending; check freelook.log before retrying.");return 15;}
+ if(wait!=WAIT_OBJECT_0){puts("DLL load is still unconfirmed; close the client before retrying.");return 15;}
+ if(result==0){puts("DLL load failed; no runtime was mapped by this load attempt.");return 16;}
 #ifndef FREELOOK_ONLY
  wchar_t helper[MAX_PATH],ini[MAX_PATH];GetModuleFileNameW(nullptr,helper,MAX_PATH);wchar_t* slash=wcsrchr(helper,L'\\');slash[1]=0;wcscpy(ini,helper);wcscat(ini,L"freelook.ini");wcscat(helper,L"Halo3VisorHud.exe");
  if(GetPrivateProfileIntW(L"Freelook",L"HudEnabled",1,ini)){

@@ -45,7 +45,37 @@ int main(){
  put(unit.data(),0xf4,1.f);axis(.2f);changed();focused=false;restored();require(!active,"focus loss cancels orbit");focused=true;
  axis(.2f);changed();keys[VK_ESCAPE]=true;axis(.1f);require(lockout&&!active,"menu locks out held F8");keys[VK_ESCAPE]=false;axis(.1f);require(!active,"lockout persists until release");keys[VK_F8]=false;axis(.1f);require(!lockout,"release clears menu lockout");
  keys[VK_F8]=true;axis(.2f);changed();put(headers.data(),0x18,uint16_t(3));put(unit.data(),0x10,uint32_t(0x30001));restored();require(!active,"full vehicle identity change cancels orbit");
- axis(.2f);freelook::CameraResultCopy copies[12];for(auto& copy:copies){copy=original;applyCamera((uintptr_t)&copy);require(memcmp(&copy,&original,sizeof copy)!=0,"camera cache survives repeated new addresses");}
+ axis(.2f);freelook::CameraResultCopy copies[128];
+ for(auto& copy:copies){copy=original;applyCamera((uintptr_t)&copy);require(memcmp(&copy,&original,sizeof copy)!=0,"camera cache survives repeated new addresses");}
+ auto heldPose=copies[0];
+ for(int pass=0;pass<3;pass++)for(auto& copy:copies){
+   applyCamera((uintptr_t)&copy);
+   require(memcmp(&copy,&heldPose,sizeof copy)==0,"revisiting older cameras never compounds the orbit");
+ }
+ // Every outstanding buffer must restore, including those visited after the
+ // first callback has cleared the global returning flag.
+ keys[VK_F8]=false;axis(.1f);clockMs+=1000;
+ for(auto& copy:copies){applyCamera((uintptr_t)&copy);require(memcmp(&copy,&original,sizeof copy)==0,"all cached cameras restore after release");}
+ require(!active&&!returning,"multi-camera release leaves runtime idle");
+ keys[VK_F8]=true;axis(.2f);
+ for(auto& copy:copies){applyCamera((uintptr_t)&copy);}
+ // A native update takes ownership back; release must not restore a stale pose
+ // over it, even when it arrives after another camera completed recenter.
+ auto freshNative=original;put(freshNative.bytes,0,freelook::Vec3{9,-4,2});
+ copies[127]=freshNative;
+ keys[VK_F8]=false;axis(.1f);clockMs+=1000;
+ for(auto& copy:copies){applyCamera((uintptr_t)&copy);}
+ require(memcmp(&copies[127],&freshNative,sizeof freshNative)==0,"release preserves newer native camera ownership");
+ // Cleared slots may be reused; dormant pointers must never be dereferenced.
+ auto* transient=(freelook::CameraResultCopy*)VirtualAlloc(nullptr,4096,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE);
+ require(transient!=nullptr,"transient camera allocated");*transient=original;
+ keys[VK_F8]=true;axis(.2f);applyCamera((uintptr_t)transient);
+ DWORD old;require(VirtualProtect(transient,4096,PAGE_NOACCESS,&old)!=0,"retired camera made inaccessible");
+ camera=original;applyCamera((uintptr_t)&camera);
+ keys[VK_F8]=false;axis(.1f);clockMs+=1000;restored();
+ require(VirtualProtect(transient,4096,PAGE_READWRITE,&old)!=0,"retired camera becomes valid again");
+ applyCamera((uintptr_t)transient);require(memcmp(transient,&original,sizeof original)==0,"delayed camera restores only on its own valid callback");
+ VirtualFree(transient,0,MEM_RELEASE);
  require(sizeof verifiedHookSites/sizeof verifiedHookSites[0]==3,"only input/camera sites");
- puts("PASS: actual F8 runtime input diversion, orbit/FOV isolation, recenter, exit, death, focus loss, menu lockout, vehicle identity and camera turnover");
+ puts("PASS: F8 input/orbit/FOV isolation, recenter, exit/death/focus/menu/identity, 128 revisited cameras, complete restoration, native ownership and retired camera lifetime");
 }

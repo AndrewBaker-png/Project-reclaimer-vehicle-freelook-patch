@@ -25,6 +25,8 @@ Only the tester needs this DLL. Other players can observe with an unmodified cli
 
 Edit `freelook.ini` beside `Halo3Freelook.exe` to change the settings. The defaults use inverted vertical look, native sensitivity, 40 ms smoothing, and a 180 ms return. Restart the client and reload the mod after changing settings or switching builds.
 
+The current source includes the unreleased audit fixes. Stop waits for a pending load to finish and for the runtime to acknowledge that its hooks are disabled. If confirmation fails, the helper returns an error and asks you to close the client. Older r30 runtimes cannot acknowledge shutdown; fully exit the old client before testing the rebuilt package. Installation paths that would exceed the launcher's path buffer are refused with an instruction to use a shorter folder.
+
 The loader is session-only. It does not install a service or startup entry; run the start helper again for each new client session. To uninstall, stop the loader, exit Reclaimer, and remove the extracted mod folder.
 
 ## Compatibility and limitations
@@ -40,6 +42,8 @@ The loader is session-only. It does not install a service or startup entry; run 
 
 The included tests cover camera math, native hook preservation, private camera copying, and the actual F8 runtime's hold/release, orbit/FOV isolation, exit, death, focus, menus, vehicle identity, and camera turnover. The binary inspection checks for graphics/network imports and cockpit/HUD file dependencies. These checks do not establish multiplayer compatibility.
 
+Audit regressions revisit 128 camera buffers, restore every pending pose after release, preserve newer native poses, and exercise retired camera addresses without accessing them outside their callbacks. Separate tests cover path boundaries, shutdown acknowledgment, loader cancellation during injection, pending-load failures, and stopping the actual DLL during startup in a test process without the game engine. Loader tests use a fake executable and isolated event names.
+
 For two-player testing, repeat as host and joining client; observe aiming/steering from the other client; check passenger/turret seats, exit/re-entry, death/respawn, map reload/reconnect, menus, focus changes, and stopping the runtime. Report crashes, disconnects, rubber-banding, aim discrepancies, and stuck views with reproduction steps. Review logs for personal information before posting them.
 
 ## Build from source
@@ -54,7 +58,7 @@ Download the [official Zig 0.14.1 Windows x64 archive](https://ziglang.org/downl
 .\Build-Freelook-Only.ps1 -ZigPath 'C:\path\to\zig.exe'
 ```
 
-The script compiles and runs four test programs, builds the launcher and DLL, checks binary isolation, and creates `release/Halo3-Freelook-Only-MP-r30.zip` with a file-hash manifest. Runtime and launcher sources are unchanged from local source revision `073ff42`; this repository contains the standalone free-look files and a portable compiler-path option in the build script.
+The script compiles and runs six native test programs plus the PowerShell loader scenarios and an actual DLL lifecycle test, builds the launcher and DLL, checks binary isolation, and creates `release/Halo3-Freelook-Only-MP-r30-audit-fixes.zip` with a file-hash manifest. The original r30 ZIP is retained. This repository started with the standalone free-look files from local source revision `073ff42`; the current source adds the audit fixes described in `RELEASE-NOTES.md`. Building does not publish a GitHub release or start the game.
 
 ## Credits
 
