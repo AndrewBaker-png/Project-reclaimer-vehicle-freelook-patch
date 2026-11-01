@@ -55,7 +55,7 @@ function Install-Freelook([string]$Folder,[string]$RegistryRoot=$script:DefaultR
     Publisher='Project Reclaimer Freelook contributors'; InstallLocation=$folder;
     UninstallString=('"'+(Join-Path $folder 'Uninstall-Freelook.exe')+'"');
     DisplayIcon=$target+',0'; InstallDate=(Get-Date -Format yyyyMMdd);
-    URLInfoAbout='https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch'
+    URLInfoAbout='https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch'
   }
   foreach($name in $values.Keys){New-ItemProperty -LiteralPath $key -Name $name -Value $values[$name] -PropertyType String -Force | Out-Null}
   foreach($name in @('NoModify','NoRepair')){New-ItemProperty -LiteralPath $key -Name $name -Value 1 -PropertyType DWord -Force | Out-Null}

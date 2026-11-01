@@ -3,6 +3,8 @@ Freelook - revision 30, Installer package 30.4.0
 The latest builds have been successfully used in live Huge Grass multiplayer
 matches on Project Reclaimer 0.9.23, as reported by the project maintainer.
 Broader map, vehicle/seat and host/client coverage remains to be documented.
+The maintainer reports working freelook in both ground and aerial vehicles.
+Every vehicle and seat has not been tested; universal compatibility is unverified.
 
 1. Fully close any old Reclaimer session. A stopped cockpit DLL still stays
    resident until the client exits. Do not launch the revision 29 helper.
@@ -104,4 +106,4 @@ MCC requires its Anti-Cheat Disabled launch option and is not flight-tested.
 No game assets or game data are included. See the GitHub repository for releases.
 
 Download and release notes:
-https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch/releases/tag/r30-installer
+https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer

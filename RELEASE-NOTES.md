@@ -1,5 +1,10 @@
 # r30 Installer — Prerelease (package 30.4.0)
 
+Repository renamed to **Project-reclaimer-vehicle-freelook-patch** to reflect
+reported use in both ground and aerial vehicles. The project maintainer has not
+tested every vehicle or seat; compatibility with all vehicles remains unverified.
+This documentation update does not change the published package binaries.
+
 - Install from a separately extracted ZIP into a chosen destination; detect
   registered copies and accept existing portable mod folders for updates.
 - Compare package versions and offer Update or same-version Repair. Refuse
@@ -15,7 +20,7 @@
   migration, version/overwrite checks, real running-client detection, refusal
   paths, partial-copy rollback, registration rollback, and concurrent maintenance.
 
-Download `Halo3-Freelook-Only-MP-r30-installer.zip` from the [Installer prerelease Assets](https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch/releases/tag/r30-installer). Extract separately, close
+Download `Halo3-Freelook-Only-MP-r30-installer.zip` from the [Installer prerelease Assets](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer). Extract separately, close
 Reclaimer, then run setup and review the destination/version confirmation.
 Launch and uninstall from the installed destination. No desktop shortcuts.
 
@@ -48,7 +53,7 @@ No command entry is required. A packaged-launcher integration test verifies
 launch order, repeated launches, paths with spaces, and client working directory.
 
 Download `Halo3-Freelook-Only-MP-r30-auto-launch.zip` from the
-[Auto Launch prerelease Assets](https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch/releases/tag/r30-auto-launch).
+[Auto Launch prerelease Assets](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-auto-launch).
 Extract all files to a writable folder, fully exit Reclaimer, and double-click
 `Play-Reclaimer-with-Freelook.exe`. Choose the Reclaimer client EXE once, then use
 this launcher for every session. Create a Windows desktop shortcut to it if desired.
@@ -66,7 +71,7 @@ The latest builds have been successfully used in live **Huge Grass** multiplayer
 - Publish the runtime's stop handles before DLL loading returns, and distinguish confirmed shutdown from a missing or timed-out acknowledgment.
 - Add path, camera ownership/lifetime, native shutdown, actual DLL startup cancellation, and PowerShell loader regression tests.
 
-Download `Halo3-Freelook-Only-MP-r30-audit-fixes.zip` from the [prerelease Assets](https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch/releases/tag/r30-audit-fixes). Extract all files together, fully exit Reclaimer, run `Start-Reclaimer-Freelook-Only.cmd`, and reopen Reclaimer. Older r30 runtimes receive stop requests but cannot acknowledge shutdown; the updated helper reports this and asks for a client restart.
+Download `Halo3-Freelook-Only-MP-r30-audit-fixes.zip` from the [prerelease Assets](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-audit-fixes). Extract all files together, fully exit Reclaimer, run `Start-Reclaimer-Freelook-Only.cmd`, and reopen Reclaimer. Older r30 runtimes receive stop requests but cannot acknowledge shutdown; the updated helper reports this and asks for a client restart.
 
 # Original r30 — Initial Prerelease
 
