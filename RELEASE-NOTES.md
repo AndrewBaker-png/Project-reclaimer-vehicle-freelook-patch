@@ -1,3 +1,7 @@
+# Local package 30.4.2 — Defender helper
+
+Includes an optional, commented administrator PowerShell helper for the exact loader file exclusion. Packaged, hash-manifested, and managed by setup/uninstall; never run automatically. Runtime behavior is unchanged. Not yet published.
+
 # r30 Installer — Repository Name Update (package 30.4.1)
 
 Refresh the installer ZIP with the **Project Reclaimer Vehicle Freelook Patch**

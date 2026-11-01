@@ -7,7 +7,7 @@ $script:PackageFiles=@(
   'Play-Reclaimer-with-Freelook.exe','Halo3Freelook.exe','Halo3VehicleFreelook-only-mp-r30.dll',
   'freelook.ini','README.txt','Start-Reclaimer-Freelook-Only.ps1','Start-Reclaimer-Freelook-Only.cmd',
   'Stop-Reclaimer-Freelook-Only.cmd','MINHOOK-LICENSE.txt','HCM-LICENSE.txt',
-  'Setup-Freelook.exe','Uninstall-Freelook.exe','Manage-Freelook.ps1'
+  'Setup-Freelook.exe','Uninstall-Freelook.exe','Manage-Freelook.ps1','Add-Freelook-Defender-Exclusion.ps1'
 )
 $script:GeneratedFiles=@('reclaimer-launcher.ini','loader-state.json','loader.log','freelook.log',
   'loader-console.log','loader-error.log')

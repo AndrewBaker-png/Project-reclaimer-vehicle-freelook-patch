@@ -91,3 +91,9 @@ The script compiles and runs six native test programs plus the PowerShell loader
 ## Credits
 
 Uses [MinHook](https://github.com/TsudaKageyu/minhook) and reference information from [HaloCheckpointManager](https://github.com/Burnt-o/HaloCheckpointManager). Their notices are included in `MINHOOK-LICENSE.txt` and `HCM-LICENSE.txt`. No game assets or game data are distributed. This is an unofficial mod and is not affiliated with Project Reclaimer, Microsoft, or Halo's developers.
+
+## Defender helper (local package 30.4.2)
+
+The package includes `Add-Freelook-Defender-Exclusion.ps1`. After installing to the final folder, open PowerShell as administrator and run the helper from that installed folder. Use `-WhatIf` to preview it. From a source checkout, pass `-LoaderPath` with the full installed `Halo3Freelook.exe` path.
+
+Defender has flagged the loader's DLL injection as `Behavior:Win32/DefenseEvasion.A!ml`. The helper documents why the mod uses those operations and adds only the exact loader file path to Defender exclusions. Run it only for a build you trust. Setup does not run it automatically. It does not restore quarantine, clear detection history, or disable real-time protection. Re-run it for a new installation location if needed. Uninstall does not remove the exclusion; undo it as administrator with `Remove-MpPreference -ExclusionPath 'FULL PATH TO Halo3Freelook.exe'`.
