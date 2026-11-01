@@ -1,6 +1,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-int WINAPI wWinMain(HINSTANCE, HINSTANCE, wchar_t*, int) {
+#include <cwchar>
+int WINAPI wWinMain(HINSTANCE, HINSTANCE, wchar_t* commandLine, int) {
+    if (wcsstr(commandLine, L"--stay-running")) { Sleep(4000); return 0; }
     HANDLE file = CreateFileW(L"launch-order.txt", FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE,
                               nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE) return 1;

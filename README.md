@@ -6,11 +6,13 @@ Hold **F8** in a Halo 3 vehicle to look around independently of the native camer
 
 ## Download and install
 
-1. Open the [r30 Auto Launch prerelease](https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch/releases/tag/r30-auto-launch) and download `Halo3-Freelook-Only-MP-r30-auto-launch.zip` under **Assets**. The GitHub source-code ZIP is for developers.
-2. Extract the entire mod ZIP to a short, writable folder, such as `C:\Mods\Freelook`. Keep all included files together.
-3. Fully exit any previous Reclaimer session. A stopped DLL remains resident until the client exits.
-4. Double-click **`Play-Reclaimer-with-Freelook.exe`**. On first use, choose your Project Reclaimer client EXE in the file picker. It remembers the location in `reclaimer-launcher.ini` and starts the freelook loader followed by Reclaimer on every launch. You do not need to type commands. You can create a normal Windows desktop shortcut to this EXE.
+1. Open the [r30 Installer prerelease](https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch/releases/tag/r30-installer) and download **`Halo3-Freelook-Only-MP-r30-installer.zip`** under **Assets**. The source-code archives do not contain built binaries. A SHA-256 checksum is also attached.
+2. Fully close Reclaimer. Extract the ZIP to a **separate folder**, such as `C:\Mods\Freelook-Setup`. Do not extract updates over an installed copy.
+3. Double-click **`Setup-Freelook.exe`**. Accept the detected installation to update, select an older portable mod folder manually, or choose a new writable destination. Review the installed/incoming versions and replacement count, then confirm.
+4. Double-click **`Play-Reclaimer-with-Freelook.exe` in the installed destination**. On first use, choose your Project Reclaimer client EXE. The launcher remembers it and starts the loader followed by the game on later launches. No commands need to be typed.
 5. Enter a vehicle, hold **F8**, and move the mouse. Release **F8** to recenter.
+
+Setup adds the mod to **Windows Settings > Apps > Installed apps**, creates no desktop shortcut, and needs no administrator access. See [install, update, and uninstall](#install-update-and-uninstall) below for backups, repair, and removal.
 
 Only players who want freelook need this DLL. Other players can use an unmodified client, but everyone still needs the map/mod required by the server.
 
@@ -27,9 +29,27 @@ Keep the entire extracted package together. If you move Reclaimer and the saved 
 
 Edit `freelook.ini` beside `Halo3Freelook.exe` to change the settings. The defaults use inverted vertical look, native sensitivity, 40 ms smoothing, and a 180 ms return. Restart the client and reload the mod after changing settings or switching builds.
 
-The r30 Auto Launch prerelease includes the combined game launcher plus the camera, cancellation, and path-safety fixes. Stop waits for a pending load to finish and for the runtime to acknowledge that its hooks are disabled. If confirmation fails, the helper returns an error and asks you to close the client. Older r30 runtimes cannot acknowledge shutdown; fully exit the old client before upgrading. Installation paths that would exceed the launcher's path buffer are refused with an instruction to use a shorter folder.
+The r30 Installer prerelease includes setup, update/repair, uninstall, the combined game launcher, and the camera, cancellation, and path-safety fixes. Stop waits for a pending load to finish and for the runtime to acknowledge that its hooks are disabled. If confirmation fails, the helper returns an error and asks you to close the client. Older r30 runtimes cannot acknowledge shutdown; fully exit the old client before upgrading. Installation paths that would exceed the launcher's path buffer are refused with an instruction to use a shorter folder.
 
-The loader is session-only. It does not install a service or startup entry; use `Play-Reclaimer-with-Freelook.exe` for each new client session. Opening the original Reclaimer EXE directly still requires the separate start helper. To uninstall, stop the loader, exit Reclaimer, and remove the extracted mod folder.
+The loader is session-only. It does not install a service or startup entry; use `Play-Reclaimer-with-Freelook.exe` for each new client session. Opening the original Reclaimer EXE directly still requires the separate start helper.
+
+## Install, update, and uninstall
+
+The [r30 Installer prerelease](https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch/releases/tag/r30-installer) is package version **30.4.0**. Its ZIP includes setup, update/repair, launch, and uninstall helpers.
+
+1. Fully close Reclaimer. Extract the new ZIP to a **separate folder**, not over your installed copy.
+2. Double-click **`Setup-Freelook.exe`** in the newly extracted folder. It detects registered installations. For an older portable copy, choose its existing mod folder manually. For a new installation, accept the default folder or select another writable destination.
+3. Review the installed and incoming versions, destination, and number of existing mod files to replace. Setup offers **Update** for a newer version and **Repair** for the same version. Downgrades, unrecognized file collisions, and damaged incoming packages are refused.
+4. Confirm. Setup stops a waiting loader, checks for running Reclaimer/MCC processes and locked files, backs up the installed files, and copies the new package. It preserves `freelook.ini`, `reclaimer-launcher.ini`, logs, and unrelated files. If replacement or registration fails, it attempts to restore the previous files and Windows Settings entry automatically and reports the result.
+5. Launch **`Play-Reclaimer-with-Freelook.exe` from the destination folder** for each session. Setup registers **Project Reclaimer Vehicle Freelook** in **Settings > Apps > Installed apps** for the current account. No administrator access or desktop shortcut is required. Keep the installation folder in place; the separately extracted source folder can be removed after successful setup.
+
+Updates follow these same steps each time. Do not let ZIP extraction overwrite the old installation first: setup cannot recover files that were replaced before it ran. Unregistered older packages must retain their original `manifest.json` so setup can recognize the version. Known r30, Audit Fixes, Auto Launch, and Uninstaller packages are supported.
+
+Backups are kept under **`freelook-backups`** in the destination. Each dated transaction contains the previous files, incoming package, registration snapshot, and a transaction record. Keep these for recovery until satisfied with the update. Rollback handles errors reported during setup; interruption by power loss or forced termination may require recovery from the retained backup. Do not open the game until setup finishes.
+
+To uninstall, fully close Reclaimer, then choose **Uninstall** in Windows Settings or double-click **`Uninstall-Freelook.exe` in the installed folder**. Direct uninstall also works for a portable copy that skipped setup. The uninstaller cancels the loader, confirms shutdown, and refuses locked files or linked folders. It removes known package files, mod settings, logs, and its registration. Reclaimer, maps, unrelated files, modified package documents/binaries, and update backups remain. The folder is removed only if empty; desktop shortcuts are not changed. Delete retained backups manually when no longer needed.
+
+For an older portable package without uninstall support, stop the loader, close Reclaimer, and remove only its mod files. Do not delete a shared game folder.
 
 ## Compatibility and limitations
 
@@ -52,6 +72,8 @@ To expand multiplayer coverage, test as host and joining client; observe aiming/
 
 ## Build from source
 
+The build includes setup/uninstall GUI helpers and regression tests using synthetic packages and temporary registry keys. Tests cover fresh install, update, repair, older portable migration, settings preservation, downgrade/collision refusal, a real fake-client process, file locks, concurrent maintenance, partial-copy rollback, registration rollback, and uninstall boundaries.
+
 Requirements: Windows x64, PowerShell, Node.js, and **Zig 0.14.1**. The MinHook source required by this build is included under `third_party/minhook`.
 
 Download the [official Zig 0.14.1 Windows x64 archive](https://ziglang.org/download/0.14.1/zig-x86_64-windows-0.14.1.zip). Verify its SHA-256 against `build-manifest.json`, then extract it under `tools/zig-x86_64-windows-0.14.1/`, or pass its executable path:
@@ -62,7 +84,7 @@ Download the [official Zig 0.14.1 Windows x64 archive](https://ziglang.org/downl
 .\Build-Freelook-Only.ps1 -ZigPath 'C:\path\to\zig.exe'
 ```
 
-The script compiles and runs six native test programs plus the PowerShell loader scenarios and an actual DLL lifecycle test, builds the combined game launcher, loader, and DLL, checks binary isolation, and creates `release/Halo3-Freelook-Only-MP-r30-auto-launch.zip` with a file-hash manifest. Earlier release ZIPs are retained. This repository started with the standalone free-look files from local source revision `073ff42`; the current source adds the audit fixes described in `RELEASE-NOTES.md`. Building does not publish a GitHub release or start the game.
+The script compiles and runs six native test programs plus the PowerShell loader scenarios and an actual DLL lifecycle test, builds the setup/uninstall helpers, combined game launcher, loader, and DLL, checks binary isolation, and creates `release/Halo3-Freelook-Only-MP-r30-installer.zip` with a file-hash manifest. Earlier release ZIPs are retained. This repository started with the standalone free-look files from local source revision `073ff42`; the current source adds the audit fixes described in `RELEASE-NOTES.md`. Building does not publish a GitHub release or start the game.
 
 ## Credits
 

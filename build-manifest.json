@@ -1,6 +1,7 @@
 {
   "revision": 30,
-  "build": "r30-auto-launch",
+  "packageVersion": "30.4.0",
+  "build": "r30-installer",
   "profile": "F8 freelook only",
   "compiler": {
     "version": "Zig 0.14.1",
@@ -18,5 +19,5 @@
   },
   "multiplayer": "Latest builds tested successfully in live Huge Grass multiplayer matches on Reclaimer 0.9.23, as reported by the project maintainer; broader coverage not yet documented",
   "sourceRevision": "073ff42",
-  "sourceNote": "Freelook-only files originally extracted from the local Halo3-Vehicle-Freelook working repository; the current standalone source includes the published r30 Auto Launch prerelease changes."
+  "sourceNote": "Freelook-only files originally extracted from the local Halo3-Vehicle-Freelook working repository; the current standalone source includes the r30 audit fixes, combined launcher, and versioned installer/updater/uninstaller."
 }

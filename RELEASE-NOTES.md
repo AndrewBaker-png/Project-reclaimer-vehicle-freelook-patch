@@ -1,4 +1,45 @@
-# r30 Auto Launch — Prerelease
+# r30 Installer — Prerelease (package 30.4.0)
+
+- Install from a separately extracted ZIP into a chosen destination; detect
+  registered copies and accept existing portable mod folders for updates.
+- Compare package versions and offer Update or same-version Repair. Refuse
+  downgrades, damaged source packages, in-place extraction, unknown collisions,
+  linked destinations, running games, locked files, and concurrent maintenance.
+- Preserve freelook settings, the saved Reclaimer path, logs, and unrelated files.
+- Back up previous package files and registration before replacement. Stage and
+  verify incoming files; automatically restore previous files/registration when
+  a replacement or registration operation fails. Keep transaction backups for
+  recovery, including after uninstall. Power loss/forced termination may require
+  recovery from the retained backup.
+- Add regression coverage for fresh install, update, repair, legacy portable
+  migration, version/overwrite checks, real running-client detection, refusal
+  paths, partial-copy rollback, registration rollback, and concurrent maintenance.
+
+Download `Halo3-Freelook-Only-MP-r30-installer.zip` from the [Installer prerelease Assets](https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch/releases/tag/r30-installer). Extract separately, close
+Reclaimer, then run setup and review the destination/version confirmation.
+Launch and uninstall from the installed destination. No desktop shortcuts.
+
+# r30 Uninstaller — Previous local package
+
+- Add `Setup-Freelook.exe` to register this extracted copy in Windows Settings
+  under Apps > Installed apps for the current user, without administrator access.
+- Add `Uninstall-Freelook.exe` for direct removal from the extracted ZIP contents.
+  The Settings entry uses the same uninstaller. No desktop shortcuts are created
+  or removed.
+- Cancel the loader and confirm shutdown before removing known package files,
+  mod configuration, logs, and the installed-app entry. Refuse locked files and
+  linked folders. Preserve game files, maps, unrelated files, and modified
+  package documents/binaries. Remove the package folder only when empty.
+- Test registration/repeated setup, separate installed copies, quoted uninstall
+  commands, removal boundaries, shutdown failures, locked runtime/refusal/retry,
+  linked folders, drive roots, and invalid packages using isolated fixtures.
+
+Package: `Halo3-Freelook-Only-MP-r30-uninstaller.zip`. After extracting into its
+permanent folder, run setup once to enable removal through Windows Settings.
+Fully close Reclaimer before uninstalling. Direct uninstall works without setup.
+Existing portable releases do not have an Installed apps entry.
+
+# r30 Auto Launch — Previous Prerelease
 
 Includes `Play-Reclaimer-with-Freelook.exe`. Double-click,
 choose the Reclaimer client once, then use this launcher for future sessions.

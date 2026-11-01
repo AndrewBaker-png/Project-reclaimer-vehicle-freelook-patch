@@ -1,4 +1,4 @@
-Freelook - revision 30, Auto Launch prerelease
+Freelook - revision 30, Installer package 30.4.0
 
 The latest builds have been successfully used in live Huge Grass multiplayer
 matches on Project Reclaimer 0.9.23, as reported by the project maintainer.
@@ -6,10 +6,14 @@ Broader map, vehicle/seat and host/client coverage remains to be documented.
 
 1. Fully close any old Reclaimer session. A stopped cockpit DLL still stays
    resident until the client exits. Do not launch the revision 29 helper.
-   Double-click Play-Reclaimer-with-Freelook.exe. First time only, choose your
-   Reclaimer client EXE. The launcher remembers it in reclaimer-launcher.ini,
-   arms the hidden loader, then opens Reclaimer. No commands need to be typed.
-   You can create a normal Windows desktop shortcut to this launcher.
+   Extract this ZIP to a separate folder, not over an installed copy. Run
+   Setup-Freelook.exe. Choose the detected installation to update/repair,
+   select an old portable mod folder, or choose a new installation folder.
+   Review the versions, destination and replacement count, then confirm.
+   Setup registers Windows Installed apps, creates no desktop shortcut, and
+   needs no administrator access. Use Play-Reclaimer-with-Freelook.exe in the
+   DESTINATION folder to play. First time only, choose your Reclaimer EXE.
+   The launcher remembers it and starts the loader before the game.
 2. Join your Huge Grass match with the map/mod required by the server.
    Follow the server's mod rules and supported anti-cheat settings.
 3. The loader automatically verifies and injects when the Halo 3 engine is
@@ -64,10 +68,40 @@ Restart the client and reload after changing configuration.
 If the launcher reports an installation path that is too long, move the entire
 extracted mod folder to a shorter path, such as C:\Mods\Freelook.
 
+Uninstall: fully close Reclaimer, then use Settings > Apps > Installed apps >
+Project Reclaimer Vehicle Freelook > Uninstall, or double-click the included
+Uninstall-Freelook.exe in your INSTALLED folder. The Settings entry requires
+running setup. Direct uninstall also works for a portable copy without setup.
+Keep the installed folder in place. You may delete the separate source folder
+after successful setup. Uninstall before moving the installed copy.
+The uninstaller cancels the loader and refuses removal when shutdown cannot
+be confirmed or files are still in use. It removes known package files, mod
+settings, logs and the Installed apps entry. Game files, maps, unrelated files
+and modified package documents/binaries remain. It never recursively deletes
+a folder and does not change desktop shortcuts. Linked folders are refused.
+
+Updates: always extract the new ZIP separately and run its Setup-Freelook.exe.
+Registered copies are detected; choose an older portable copy manually.
+Setup compares package versions, offers Update or same-version Repair, and
+refuses downgrades, damaged incoming files, and unrecognized file collisions.
+Your freelook.ini and saved client location are kept, along with logs and
+unrelated files. Close Reclaimer before continuing and leave it closed until
+setup finishes. A waiting loader is cancelled; running games/locked files
+block changes. Concurrent setup/uninstall on the same copy is refused.
+Previous files and registration are backed up under freelook-backups in the
+destination. A failed replacement or registration triggers automatic rollback;
+setup reports if recovery could not finish. Backups remain after uninstall,
+and can be deleted manually when no longer needed. Power loss/forced shutdown
+may require recovery from the backup. Setup cannot recover files you already
+overwrote by extracting the ZIP directly into the old installation.
+
 Build: Build-Freelook-Only.ps1. The package manifest lists hashes and checks.
-The local audit-fixes package retains the original r30 runtime filename and
-adds camera restoration, path-boundary and loader cancellation regressions.
+This installer package retains the original r30 runtime filename and
+includes the r30 audit fixes plus versioned setup, update/repair, and uninstall.
 Source runtime: src/freelook_only.cpp, with the shared verified input/camera
 sites, math and MinHook stubs. Supported client is pinned Reclaimer 0.9.23.
 MCC requires its Anti-Cheat Disabled launch option and is not flight-tested.
 No game assets or game data are included. See the GitHub repository for releases.
+
+Download and release notes:
+https://github.com/AndrewBaker-png/Project-reclaimer-aerial-vehicle-freelook-patch/releases/tag/r30-installer
