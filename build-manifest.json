@@ -1,6 +1,6 @@
 {
   "revision": 30,
-  "build": "r30-audit-fixes",
+  "build": "r30-auto-launch",
   "profile": "F8 freelook only",
   "compiler": {
     "version": "Zig 0.14.1",
@@ -16,7 +16,7 @@
     "sha256": "ceef542ac17980d178e281ebf510b4aaaf28ef650a288f1d68e8250731ad7e70",
     "source": "https://github.com/ProjectReclaimer/project-reclaimer-releases/releases/tag/v0.9.23"
   },
-  "multiplayer": "Not yet tested with a second player",
+  "multiplayer": "Latest builds tested successfully in live Huge Grass multiplayer matches on Reclaimer 0.9.23, as reported by the project maintainer; broader coverage not yet documented",
   "sourceRevision": "073ff42",
-  "sourceNote": "Freelook-only files originally extracted from the local Halo3-Vehicle-Freelook working repository; the current standalone source includes unreleased camera, path and cancellation audit fixes."
+  "sourceNote": "Freelook-only files originally extracted from the local Halo3-Vehicle-Freelook working repository; the current standalone source includes the published r30 Auto Launch prerelease changes."
 }

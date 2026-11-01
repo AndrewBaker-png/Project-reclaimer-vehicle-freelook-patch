@@ -1,11 +1,17 @@
-Freelook-only multiplayer test - revision 30, audit fixes (unreleased)
+Freelook - revision 30, Auto Launch prerelease
+
+The latest builds have been successfully used in live Huge Grass multiplayer
+matches on Project Reclaimer 0.9.23, as reported by the project maintainer.
+Broader map, vehicle/seat and host/client coverage remains to be documented.
 
 1. Fully close any old Reclaimer session. A stopped cockpit DLL still stays
    resident until the client exits. Do not launch the revision 29 helper.
-   Run Start-Reclaimer-Freelook-Only.cmd before opening Reclaimer. It arms
-   a hidden one-shot loader for up to 30 minutes. Then open Reclaimer normally.
-2. Use a private test lobby with anti-cheat disabled through the supported
-   host settings. Join with another player for the network test.
+   Double-click Play-Reclaimer-with-Freelook.exe. First time only, choose your
+   Reclaimer client EXE. The launcher remembers it in reclaimer-launcher.ini,
+   arms the hidden loader, then opens Reclaimer. No commands need to be typed.
+   You can create a normal Windows desktop shortcut to this launcher.
+2. Join your Huge Grass match with the map/mod required by the server.
+   Follow the server's mod rules and supported anti-cheat settings.
 3. The loader automatically verifies and injects when the Halo 3 engine is
    ready. It can also be started after entering the game. In a source checkout
    the helper is at the repository root; in the ZIP it is beside the launcher.
@@ -23,17 +29,21 @@ loader-state.json reports waiting/loading/loaded/refused/cancelled/expired.
 It also records loadMayBePending when a load has not completed conclusively.
 loader.log records loader checks; freelook.log records actual DLL activation.
 The loader does not install a Windows service or permanent startup entry.
-Run the start helper again for a later client session. It never retries a
+Use Play-Reclaimer-with-Freelook.exe for each later client session. The separate
+Start-Reclaimer-Freelook-Only.cmd still works if the game is already open.
+To choose a different client, delete reclaimer-launcher.ini and reopen the
+launcher. Keep all package files together in a writable folder. It never retries a
 compatibility refusal or a load failure automatically.
 
 No F7/F9 controls, first-person override, visor, HUD, graphics hooks, custom
 mesh loader, map package or cockpit asset dependency is included. Revision 29
-and its start/stop helpers remain available separately. Both players still
+and its start/stop helpers remain available separately. All players still
 need the same underlying map/mod normally required by the server.
-Only the tester needs this DLL; other players can observe with an unmodified
-client. This is a test build, not a verified public-server release.
+Only players who want freelook need this DLL; other players can use an
+unmodified client. Confirmed live multiplayer coverage is Huge Grass on the
+supported Reclaimer build; other configurations may behave differently.
 
-Suggested two-player checks:
+Suggested checks to expand multiplayer coverage:
 - Observe the vehicle/aim from the second client while the tester holds F8,
   moves the view, releases it, and resumes mouse steering/aiming.
 - Repeat as host and joining client. Check passenger/turret behavior too.
@@ -42,10 +52,10 @@ Suggested two-player checks:
   before resuming. Check that no stale orbit follows the player on foot.
 - Confirm normal controls after stopping the runtime.
 Record crashes, disconnects, rubber-banding, aim discrepancies and stuck views.
+Include the map, vehicle/seat, host or joining role and build in test reports.
 
 The loader does not change server anti-cheat settings or bypass enforcement.
-It refuses other resident freelook revisions. Full MP behavior remains to
-be verified in the actual two-player test.
+It refuses other resident freelook revisions.
 
 Configuration: freelook.ini beside Halo3Freelook.exe. F8 is key 119;
 InvertVertical=1 retains the requested flipped freelook pitch, sensitivity
