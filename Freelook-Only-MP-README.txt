@@ -1,4 +1,4 @@
-Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.2
+Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.3
 
 The latest builds have been successfully used in live Huge Grass multiplayer
 matches on Project Reclaimer 0.9.23, as reported by the project maintainer.
@@ -116,3 +116,7 @@ beside the script. Setup never runs it automatically. It does not restore
 quarantine, clear history, or disable protection. Uninstall leaves the exclusion;
 remove it as administrator with Remove-MpPreference -ExclusionPath followed by
 the full quoted loader path. A source checkout requires -LoaderPath explicitly.
+
+Camera fix (30.4.3): Preserve Halo's private camera calling convention,
+including R11 and XMM3-5, across Freelook processing. Fixes the identified
+F8 crash path in the player-camera loop; live verification is still required.

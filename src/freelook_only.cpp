@@ -17,7 +17,7 @@
 #ifndef FREELOOK_ONLY
 #error Build this isolated runtime with FREELOOK_ONLY.
 #endif
-extern "C" { void inputXHook();void inputYHook();void cameraHook();void* inputXTrampoline=nullptr;void* inputYTrampoline=nullptr;void* cameraTrampoline=nullptr; }
+extern "C" { void inputXHook();void inputYHook();void cameraHook();void cameraResultHook();void* inputXTrampoline=nullptr;void* inputYTrampoline=nullptr;void* cameraTrampoline=nullptr; }
 static uintptr_t haloBase=0;
 static SRWLOCK stateLock=SRWLOCK_INIT;
 static freelook::Look look;
@@ -197,11 +197,12 @@ static uintptr_t applyCamera(uintptr_t camera){
   return camera;
 }
 extern "C" void onCamera(void*){} // retained only for the isolated assembly-stub tests
-static uintptr_t __fastcall cameraResultHook(int user){
-  auto original=(uintptr_t(__fastcall*)(int))cameraTrampoline;
-  uintptr_t result=original(user);
-  if(user==0)result=applyCamera(result);
-  return result;
+// Halo's internal caller relies on volatile R11 and XMM3-5 surviving this
+// function. A normal C++ detour violates that private calling convention.
+// The assembly wrapper runs the original first and preserves its complete
+// register state while this callback edits only the local user's camera pose.
+extern "C" void onCameraResult(uintptr_t camera,int user){
+  if(user==0)applyCamera(camera);
 }
 
 static bool checkBytes(uintptr_t address,const unsigned char* expected,size_t size){unsigned char bytes[32];return size<=sizeof bytes&&ReadProcessMemory(GetCurrentProcess(),(void*)address,bytes,size,nullptr)&&memcmp(bytes,expected,size)==0;}

@@ -1,3 +1,7 @@
+# Local package 30.4.3 — Camera hook register preservation
+
+Fixes a camera detour that used the standard C++ calling convention while Halo callers rely on volatile R11 and XMM3-5 surviving. An assembly wrapper preserves the original function's output register state across Freelook processing. Adds 10,000 native regression calls with a deliberately clobbering callback. This addresses the observed F8 activation crash path; live verification is still required. Not yet published.
+
 # Local package 30.4.2 — Defender helper
 
 Includes an optional, commented administrator PowerShell helper for the exact loader file exclusion. Packaged, hash-manifested, and managed by setup/uninstall; never run automatically. Runtime behavior is unchanged. Not yet published.
