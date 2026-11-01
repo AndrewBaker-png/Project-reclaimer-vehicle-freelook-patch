@@ -1,4 +1,17 @@
-# r30 Installer — Prerelease (package 30.4.0)
+# r30 Installer — Repository Name Update (package 30.4.1)
+
+Refresh the installer ZIP with the **Project Reclaimer Vehicle Freelook Patch**
+name and canonical `Project-reclaimer-vehicle-freelook-patch` repository links,
+including the packaged README and Windows Installed apps information link.
+The maintainer reports use in ground and aerial vehicles; every vehicle/seat
+remains untested. Camera/runtime behavior is unchanged. Version 30.4.1 is offered
+as an update to 30.4.0; settings and the saved game location remain preserved.
+
+Download `Halo3-Freelook-Only-MP-r30-installer.zip` from the
+[30.4.1 prerelease Assets](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer-30.4.1).
+Extract separately and run `Setup-Freelook.exe`. The new checksum is attached.
+
+# r30 Installer — Previous Prerelease (package 30.4.0)
 
 Repository renamed to **Project-reclaimer-vehicle-freelook-patch** to reflect
 reported use in both ground and aerial vehicles. The project maintainer has not

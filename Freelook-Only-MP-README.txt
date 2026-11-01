@@ -1,4 +1,4 @@
-Freelook - revision 30, Installer package 30.4.0
+Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.1
 
 The latest builds have been successfully used in live Huge Grass multiplayer
 matches on Project Reclaimer 0.9.23, as reported by the project maintainer.
@@ -106,4 +106,4 @@ MCC requires its Anti-Cheat Disabled launch option and is not flight-tested.
 No game assets or game data are included. See the GitHub repository for releases.
 
 Download and release notes:
-https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer
+https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer-30.4.1

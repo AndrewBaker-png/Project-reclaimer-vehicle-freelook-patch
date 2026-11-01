@@ -1,6 +1,6 @@
 {
   "revision": 30,
-  "packageVersion": "30.4.0",
+  "packageVersion": "30.4.1",
   "build": "r30-installer",
   "profile": "F8 freelook only",
   "compiler": {
