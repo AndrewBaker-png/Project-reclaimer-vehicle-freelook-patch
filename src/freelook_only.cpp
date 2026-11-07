@@ -293,7 +293,7 @@ static DWORD runWorker(){
   sensitivity=freelook::clamp(GetPrivateProfileIntW(L"Freelook",L"SensitivityMilli",1000,ini)/1000.f,.01f,10.f);
   smoothingSeconds=freelook::clamp(GetPrivateProfileIntW(L"Freelook",L"SmoothingMs",40,ini)/1000.f,0.f,.3f);
   returnSeconds=freelook::clamp(GetPrivateProfileIntW(L"Freelook",L"ReturnMs",180,ini)/1000.f,.01f,1.f);
-  if(!freelook::validHoldKey(holdKey,reclaimer)){log("REFUSED: invalid HoldKey/HoldVirtualKey, reserved menu/stop key, or voice-chat conflict; see README rebinding instructions");return 2;}
+  if(!freelook::validHoldKey(holdKey,reclaimer)){log("REFUSED: invalid HoldKey/HoldVirtualKey, reserved menu key, or voice-chat conflict; see README rebinding instructions");return 2;}
   {char message[100];snprintf(message,sizeof message,"freelook hold binding: Windows virtual key %d",holdKey);log(message);}
   if(liftedEngine.code)haloBase=liftedEngine.image;
   else while(!(haloBase=(uintptr_t)GetModuleHandleW(L"halo3.dll"))){if(WaitForSingleObject(stopEvent,100)==WAIT_OBJECT_0)return 0;}

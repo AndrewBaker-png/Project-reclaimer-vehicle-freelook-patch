@@ -38,7 +38,7 @@ int main(){
  require(freelook::parseHoldKey(L"z",0)=='Z'&&freelook::parseHoldKey(L"0",0)=='0',"letter and digit bindings");
  for(const auto* invalid:{L"F0",L"F25",L"F01",L"Mouse6",L"Ctrl+F8",L"unknown",L"123456789012345678901234567890123456"})
    require(freelook::parseHoldKey(invalid,VK_F8)==-1,"invalid named binding never falls back silently");
- for(int invalid:{-1,0,255,VK_ESCAPE,VK_RETURN,VK_TAB,VK_F10,int('V')})
+ for(int invalid:{-1,0,255,VK_ESCAPE,VK_RETURN,VK_TAB,int('V')})
    require(!freelook::validHoldKey(invalid,false),"invalid/reserved key rejected");
  require(freelook::validHoldKey('B',false)&&!freelook::validHoldKey('B',true),"Reclaimer voice exclusion retained");
  wchar_t tempPath[MAX_PATH],iniPath[MAX_PATH];
@@ -46,6 +46,11 @@ int main(){
  require(freelook::loadHoldKey(iniPath)==VK_F8,"missing settings default to F8");
  require(WritePrivateProfileStringW(L"Freelook",L"HoldVirtualKey",L"117",iniPath),"write legacy profile");
  require(freelook::loadHoldKey(iniPath)==VK_F6,"existing numeric setting preserved");
+ require(WritePrivateProfileStringW(L"Freelook",L"HoldVirtualKey",L"121",iniPath),"write legacy F10 profile");
+ const int legacyF10=freelook::loadHoldKey(iniPath);
+ require(legacyF10==VK_F10&&freelook::validHoldKey(legacyF10,true)&&freelook::validHoldKey(legacyF10,false),"legacy F10 profile activates on Reclaimer and MCC");
+ require(WritePrivateProfileStringW(L"Freelook",L"HoldKey",L"F10",iniPath),"write named F10 profile");
+ require(freelook::loadHoldKey(iniPath)==VK_F10,"named F10 matches the legacy value");
  require(WritePrivateProfileStringW(L"Freelook",L"HoldKey",L"Mouse4",iniPath),"write named profile");
  require(freelook::loadHoldKey(iniPath)==VK_XBUTTON1,"named binding overrides legacy setting");
  require(WritePrivateProfileStringW(L"Freelook",L"HoldKey",L"typo",iniPath),"write invalid profile");
@@ -71,6 +76,9 @@ int main(){
  keys[VK_F8]=true;axis(.2f);require(!active,"old key no longer activates legacy runtime");keys[VK_F8]=false;
  keys[VK_XBUTTON1]=true;axis(.2f);changed();
  keys[VK_XBUTTON1]=false;axis(.1f);clockMs+=1000;restored();require(!active,"rebound mouse button releases legacy runtime");
+ holdKey=legacyF10;
+ keys[VK_F10]=true;axis(.2f);changed();
+ keys[VK_F10]=false;axis(.1f);clockMs+=1000;restored();require(!active,"F10 alone holds and releases freelook");
  holdKey=VK_F8;
  keys[VK_F8]=true;axis(.2f);changed();put(unit.data(),0x10,uint32_t(0xffffffff));restored();require(!active&&!returning,"vehicle exit cancels orbit");
  put(unit.data(),0x10,uint32_t(0x20001));axis(.2f);changed();put(unit.data(),0xf4,0.f);restored();require(!active,"death cancels orbit");

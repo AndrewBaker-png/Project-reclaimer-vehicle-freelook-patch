@@ -34,9 +34,8 @@ inline int parseHoldKey(const wchar_t* name,int legacyKey){
 }
 inline bool validHoldKey(int key,bool reclaimer){
   // Preserve voice-chat exclusions; menu keys always lock out the runtime.
-  // F10 is reserved by the emergency stop chord.
   return key>=1&&key<=254&&key!='V'&&(!reclaimer||key!='B')&&
-    key!=VK_ESCAPE&&key!=VK_RETURN&&key!=VK_TAB&&key!=VK_F10;
+    key!=VK_ESCAPE&&key!=VK_RETURN&&key!=VK_TAB;
 }
 inline int loadHoldKey(const wchar_t* ini){
   wchar_t name[64]{};
