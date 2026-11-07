@@ -1,6 +1,6 @@
 {
   "revision": 30,
-  "packageVersion": "30.4.6",
+  "packageVersion": "30.4.7",
   "build": "r30-installer",
   "profile": "F8 freelook only",
   "compiler": {
@@ -27,5 +27,14 @@
   },
   "multiplayer": "Latest builds tested successfully in live Huge Grass multiplayer matches on Reclaimer 0.9.23, as reported by the project maintainer; broader coverage not yet documented",
   "sourceRevision": "073ff42",
-  "sourceNote": "Freelook-only files originally extracted from the local Halo3-Vehicle-Freelook working repository; the current standalone source includes the r30 audit fixes, combined launcher, and versioned installer/updater/uninstaller."
+  "sourceNote": "Freelook-only files originally extracted from the local Halo3-Vehicle-Freelook working repository; the current standalone source includes the r30 audit fixes, combined launcher, and versioned installer/updater/uninstaller.",
+  "reclaimer0101": {
+    "version": "0.10.1",
+    "sha256": "d036d1a25516d11a3a164a8ad4b1e3b5681062492e6e0414252e5da71c30e171",
+    "source": "https://github.com/ProjectReclaimer/project-reclaimer-releases/releases/tag/v0.10.1",
+    "inputHook": "client image + 0x30470d5",
+    "contextKey": "client image + 0x4aa4b18",
+    "cameraHook": "translated allocation + 0x584ede",
+    "gameplayValidation": "Live read-only hook probe passed; Freelook 30.4.7 works in-game on Reclaimer 0.10.1, as reported by the project maintainer"
+  }
 }

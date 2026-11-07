@@ -3,10 +3,13 @@
 #include <windows.h>
 #include <cstdint>
 #include <cstring>
+#include <initializer_list>
 
 namespace freelook {
 inline constexpr char reclaimer010Hash[] =
     "8246e8a4a6e90dcd2305ca402a5de3f6b2ab295fc86e3987ac100d8dcd38312e";
+inline constexpr char reclaimer0101Hash[] =
+    "d036d1a25516d11a3a164a8ad4b1e3b5681062492e6e0414252e5da71c30e171";
 
 // Windows x64 machine-code cache for the supported Halo 3 build.
 inline constexpr uintptr_t liftedInput = 0x5a31a0;
@@ -32,6 +35,10 @@ struct LiftedEngine {
     uintptr_t image = 0;
     uintptr_t tlsVector = 0;
     uintptr_t host = 0;
+    bool update0101 = false;
+    uintptr_t inputHook() const { return host + (update0101 ? 0x30470d5 : nativeInputEnd); }
+    uintptr_t contextKey() const { return host + (update0101 ? 0x4aa4b18 : nativeContextKey); }
+    uintptr_t cameraHook() const { return code + cameraEnd - (update0101 ? 0x20 : 0); }
 };
 
 template<class T>
@@ -65,25 +72,28 @@ inline LiftedEngine findLiftedEngine(HANDLE process) {
         if (region.State != MEM_COMMIT || region.Type != MEM_PRIVATE ||
             region.AllocationBase != region.BaseAddress || region.RegionSize < 0x17d0400 ||
             (region.Protect != PAGE_EXECUTE_READWRITE && region.Protect != PAGE_EXECUTE_READ)) continue;
-        if (!matchRemote(process, base + liftedInput + 0x12db, storeX) ||
-            !matchRemote(process, base + liftedInput + 0x1369, storeY) ||
-            !matchRemote(process, base + liftedCamera + 0x176, imageLoad) ||
-            !matchRemote(process, base + liftedCamera + 0x197, tlsLoad) ||
-            !matchRemote(process, base + liftedCamera + 0x1a1, tlsCall)) continue;
-        LiftedEngine candidate{base};
-        uintptr_t inputImage = 0;
-        uint32_t tlsIndex = 0;
-        MEMORY_BASIC_INFORMATION helper{};
-        if (!readRemote(process, base + liftedCamera + 0x178, candidate.image) || !candidate.image ||
-            !readRemote(process, base + liftedInput + 0x212, inputImage) || inputImage != candidate.image ||
-            !readRemote(process, base + liftedCamera + 0x199, candidate.tlsVector) ||
-            !VirtualQueryEx(process, reinterpret_cast<void*>(candidate.tlsVector), &helper, sizeof helper) ||
-            helper.Type != MEM_IMAGE || helper.State != MEM_COMMIT ||
-            !matchRemote(process, candidate.tlsVector, tlsEntry) ||
-            !readRemote(process, candidate.image + 0xa39f9c, tlsIndex) || tlsIndex > 1023) continue;
-        if (found.code) return {};
-        candidate.host = reinterpret_cast<uintptr_t>(helper.AllocationBase);
-        found = candidate;
+        for (bool updated : {false, true}) {
+            const uintptr_t scanBase = base - (updated ? 0x20 : 0);
+            if (!matchRemote(process, scanBase + liftedInput + 0x12db, storeX) ||
+                !matchRemote(process, scanBase + liftedInput + 0x1369, storeY) ||
+                !matchRemote(process, scanBase + liftedCamera + 0x176, imageLoad) ||
+                !matchRemote(process, scanBase + liftedCamera + 0x197, tlsLoad) ||
+                !matchRemote(process, scanBase + liftedCamera + 0x1a1, tlsCall)) continue;
+            LiftedEngine candidate{base}; candidate.update0101 = updated;
+            uintptr_t inputImage = 0;
+            uint32_t tlsIndex = 0;
+            MEMORY_BASIC_INFORMATION helper{};
+            if (!readRemote(process, scanBase + liftedCamera + 0x178, candidate.image) || !candidate.image ||
+                !readRemote(process, scanBase + liftedInput + 0x212, inputImage) || inputImage != candidate.image ||
+                !readRemote(process, scanBase + liftedCamera + 0x199, candidate.tlsVector) ||
+                !VirtualQueryEx(process, reinterpret_cast<void*>(candidate.tlsVector), &helper, sizeof helper) ||
+                helper.Type != MEM_IMAGE || helper.State != MEM_COMMIT ||
+                !matchRemote(process, candidate.tlsVector, tlsEntry) ||
+                !readRemote(process, candidate.image + 0xa39f9c, tlsIndex) || tlsIndex > 1023) continue;
+            if (found.code) return {};
+            candidate.host = reinterpret_cast<uintptr_t>(helper.AllocationBase);
+            found = candidate;
+        }
     }
     return found;
 }
@@ -97,9 +107,10 @@ inline bool liftedHookSitesMatch(HANDLE process, const LiftedEngine& engine) {
     constexpr unsigned char contextLookup[] = {
         0x48,0x8b,0x05,0x67,0xbc,0x5a,0x01,0x8b,0x70,0x18
     };
-    return matchRemote(process, engine.host + nativeInputEnd - sizeof nativeAxisStores, nativeAxisStores) &&
-           matchRemote(process, engine.host + nativeInputEnd, nativeInputEndBytes) &&
-           matchRemote(process, engine.host + 0x338a5aa, contextLookup) &&
-           matchRemote(process, engine.code + cameraEnd, cameraEndBytes);
+    constexpr unsigned char contextLookup0101[] = {0x48,0x8b,0x05,0xb7,0x22,0x61,0x01,0x8b,0x70,0x18};
+    return matchRemote(process, engine.inputHook() - sizeof nativeAxisStores, nativeAxisStores) &&
+           matchRemote(process, engine.inputHook(), nativeInputEndBytes) &&
+           (engine.update0101 ? matchRemote(process, engine.host + 0x349285a, contextLookup0101) : matchRemote(process, engine.host + 0x338a5aa, contextLookup)) &&
+           matchRemote(process, engine.cameraHook(), cameraEndBytes);
 }
 }

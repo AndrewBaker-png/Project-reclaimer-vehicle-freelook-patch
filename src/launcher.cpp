@@ -82,11 +82,12 @@ int wmain(int argc,wchar_t** argv){
  bool lifted=false;
 #ifdef FREELOOK_ONLY
  if(reclaimerMode&&!module(pid,L"halo3.dll")){
-   if(!hashFile(gamePath,freelook::reclaimer010Hash)){puts("Refused: client executable differs from the verified Reclaimer 0.10.0 build.");CloseHandle(process);return 6;}
+   const bool updated=hashFile(gamePath,freelook::reclaimer0101Hash);
+   if(!updated&&!hashFile(gamePath,freelook::reclaimer010Hash)){puts("Refused: client executable differs from the verified Reclaimer 0.10.0/0.10.1 builds.");CloseHandle(process);return 6;}
    const auto engine=freelook::findLiftedEngine(process);
    if(!engine.code){puts("Waiting for the verified Reclaimer 0.10.0 engine.");CloseHandle(process);return 1;}
-   if(!freelook::liftedHookSitesMatch(process,engine)){puts("Refused: Reclaimer 0.10.0 live input or camera hook site differs.");CloseHandle(process);return 17;}
-   printf("Verified Reclaimer 0.10.0 PID %lu, exact client SHA256, native input bridge and translated camera hook sites.\n",pid);
+   if(engine.update0101!=updated||!freelook::liftedHookSitesMatch(process,engine)){puts("Refused: Reclaimer 0.10.0 live input or camera hook site differs.");CloseHandle(process);return 17;}
+   printf("Verified Reclaimer %s PID %lu, exact client SHA256, native input bridge and translated camera hook sites.\n",updated?"0.10.1":"0.10.0",pid);
    lifted=true;
  }
 #endif

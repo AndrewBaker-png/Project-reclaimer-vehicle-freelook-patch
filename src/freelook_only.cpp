@@ -153,7 +153,7 @@ extern "C" void onInputY(void* savedFx){onAxis(savedFx,false);}
 static uintptr_t currentGuestContext(){
   uintptr_t key=0,context=0;
   DWORD indexPlusOne=0;
-  if(!engineRead(liftedEngine.host+freelook::nativeContextKey,key)||!key||
+  if(!engineRead(liftedEngine.contextKey(),key)||!key||
      !engineRead(key+0x18,indexPlusOne)||!indexPlusOne)return 0;
   const DWORD previousError=GetLastError();
   const auto entry=reinterpret_cast<uintptr_t>(TlsGetValue(indexPlusOne-1));
@@ -304,8 +304,8 @@ static DWORD runWorker(){
     {haloBase+verifiedHookSites[2].rva,(void*)cameraResultHook,&cameraTrampoline}
   };
   const Hook liftedHooks[]={
-    {liftedEngine.host+freelook::nativeInputEnd,(void*)liftedInputHook,&liftedInputTrampoline},
-    {liftedEngine.code+freelook::cameraEnd,(void*)liftedCameraHook,&liftedCameraTrampoline}
+    {liftedEngine.inputHook(),(void*)liftedInputHook,&liftedInputTrampoline},
+    {liftedEngine.cameraHook(),(void*)liftedCameraHook,&liftedCameraTrampoline}
   };
   const Hook* hooks=liftedEngine.code?liftedHooks:legacyHooks;
   const size_t hookCount=liftedEngine.code?2:3;

@@ -1,3 +1,9 @@
+## 30.4.7 — Reclaimer 0.10.1
+
+- Retraced native input to client RVA `0x30470d5`, guest-context key to `0x4aa4b18`, and translated camera hook to allocation offset `0x584ede`.
+- Retains separate 0.10.0 offsets. Requires an exact supported executable hash and matching live instructions before loading.
+- Live read-only compatibility probe passed on 0.10.1. The project maintainer confirmed Freelook 30.4.7 works in-game on Reclaimer 0.10.1.
+
 # Local package 30.4.6 — Mega Mantis and Scarab
 
 Recognizes biped and giant parent objects with seats in Reclaimer 0.10.0. Huge Grass uses those object types for the Mega Mantis and Scarab.

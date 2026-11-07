@@ -85,9 +85,10 @@ int main(){
  require(sizeof verifiedHookSites/sizeof verifiedHookSites[0]==3,"only input/camera sites");
  puts("PASS: F8 input/orbit/FOV isolation, recenter, exit/death/focus/menu/identity, 128 revisited cameras, complete restoration, native ownership and retired camera lifetime");
 
+ for(bool updated : {false,true}) {
  module.resize(freelook::liftedFlightY+sizeof(float));
  haloBase=(uintptr_t)module.data();
- liftedEngine={1,haloBase,0};
+ liftedEngine={1,haloBase,0}; liftedEngine.update0101=updated;
  unsigned char context[0x2e0]{};
  const auto contextAddress=(uintptr_t)context;
  const DWORD slot=TlsAlloc();
@@ -95,7 +96,7 @@ int main(){
  unsigned char key[0x20]{};
  put(key,0x18,slot+1);
  const auto keyAddress=(uintptr_t)key;
- liftedEngine.host=(uintptr_t)&keyAddress-freelook::nativeContextKey;
+ liftedEngine.host=(uintptr_t)&keyAddress-(updated?0x4aa4b18:freelook::nativeContextKey);
  require(TlsSetValue(slot,const_cast<uintptr_t*>(&contextAddress)),"native context attached to test thread");
  auto& x=*reinterpret_cast<float*>(haloBase+freelook::liftedInputX);
  auto& y=*reinterpret_cast<float*>(haloBase+freelook::liftedInputY);
@@ -168,5 +169,6 @@ int main(){
  require(memcmp(&camera,&original,sizeof camera)==0,"lifted assembly release restores camera");
  require(MH_DisableHook(MH_ALL_HOOKS)==MH_OK&&MH_Uninitialize()==MH_OK,"lifted fixture hooks stopped");
  require(TlsFree(slot),"native context TLS slot released");
- puts("PASS: actual lifted input/camera assembly hooks, register arguments and return preservation");
+ puts(updated?"PASS: Reclaimer 0.10.1 TLS and assembly hooks":"PASS: Reclaimer 0.10.0 TLS and assembly hooks");
+ }
 }

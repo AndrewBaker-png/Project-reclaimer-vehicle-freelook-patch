@@ -1,4 +1,7 @@
-Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.6
+Freelook 30.4.7 adds Reclaimer 0.10.1 support while retaining 0.10.0 and legacy support.
+The 0.10.1 executable hash and live input/camera hook probe passed. The project maintainer confirmed Freelook 30.4.7 works in-game on Reclaimer 0.10.1.
+
+Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.7
 
 Adds Windows x64 support for Project Reclaimer 0.10.0's recompiled Halo 3
 engine. The loader verifies the exact client SHA-256 and translated code
