@@ -15,6 +15,7 @@
 #include "verified_build.h"
 #include "reclaimer_010.h"
 #include "runtime_control.h"
+#include "hold_binding.h"
 #ifndef FREELOOK_ONLY
 #error Build this isolated runtime with FREELOOK_ONLY.
 #endif
@@ -253,12 +254,13 @@ static DWORD runWorker(){
   reclaimer=legacyReclaimer||liftedEngine.code;
   if(legacyReclaimer){HANDLE snapshot=CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);PROCESSENTRY32W pe={sizeof pe};if(Process32FirstW(snapshot,&pe))do{if(pe.th32ProcessID==GetCurrentProcessId()){uiParent=pe.th32ParentProcessID;break;}}while(Process32NextW(snapshot,&pe));CloseHandle(snapshot);}
   if(!reclaimer&&!wcsstr(GetCommandLineW(),L"-no-eac")&&!wcsstr(GetCommandLineW(),L"-eac-nop-loaded")){log("REFUSED: use MCC Anti-Cheat Disabled launch option");return 1;}
-  holdKey=GetPrivateProfileIntW(L"Freelook",L"HoldVirtualKey",119,ini);
+  holdKey=freelook::loadHoldKey(ini);
   invertVertical=GetPrivateProfileIntW(L"Freelook",L"InvertVertical",1,ini)!=0;
   sensitivity=freelook::clamp(GetPrivateProfileIntW(L"Freelook",L"SensitivityMilli",1000,ini)/1000.f,.01f,10.f);
   smoothingSeconds=freelook::clamp(GetPrivateProfileIntW(L"Freelook",L"SmoothingMs",40,ini)/1000.f,0.f,.3f);
   returnSeconds=freelook::clamp(GetPrivateProfileIntW(L"Freelook",L"ReturnMs",180,ini)/1000.f,.01f,1.f);
-  if(holdKey<1||holdKey>254||holdKey==86||(reclaimer&&holdKey==66)){log("REFUSED: invalid hold key or voice-chat conflict");return 2;}
+  if(!freelook::validHoldKey(holdKey,reclaimer)){log("REFUSED: invalid HoldKey/HoldVirtualKey, reserved menu/stop key, or voice-chat conflict; see README rebinding instructions");return 2;}
+  {char message[100];snprintf(message,sizeof message,"freelook hold binding: Windows virtual key %d",holdKey);log(message);}
   if(liftedEngine.code)haloBase=liftedEngine.image;
   else while(!(haloBase=(uintptr_t)GetModuleHandleW(L"halo3.dll"))){if(WaitForSingleObject(stopEvent,100)==WAIT_OBJECT_0)return 0;}
   if(WaitForSingleObject(stopEvent,0)==WAIT_OBJECT_0)return 0;
@@ -295,12 +297,12 @@ static DWORD runWorker(){
   for(size_t i=0;i<hookCount;i++)MH_QueueEnableHook((void*)hooks[i].address);
   hooksMayBeEnabled=true;
   if(MH_ApplyQueued()!=MH_OK){InterlockedExchange(&enabled,0);hooksMayBeEnabled=MH_DisableHook(MH_ALL_HOOKS)!=MH_OK;log("hook activation failed");return 7;}
-  log(liftedEngine.code?"ACTIVE: Reclaimer 0.10.0 lifted input/camera hooks; F8 orbit only":"ACTIVE: exactly 3 input/camera hooks; F8 orbit only; no F7/F9 controls, cockpit, visor, HUD, graphics hooks or asset loading");
+  log(liftedEngine.code?"ACTIVE: Reclaimer 0.10.0 lifted input/camera hooks; configured hold key":"ACTIVE: exactly 3 input/camera hooks; configured hold key; no cockpit, visor, HUD, graphics hooks or asset loading");
   ULONGLONG lastStatus=GetTickCount64();
   while(WaitForSingleObject(stopEvent,33)==WAIT_TIMEOUT){
     if(!enginePresent())break;
     if(down(VK_F10)&&down(VK_CONTROL)&&down(VK_SHIFT))break;
-    auto now=GetTickCount64();if(now-lastStatus>=5000){lastStatus=now;char text[300];snprintf(text,sizeof text,"input=%lld camera=%lld diverted=%lld f8checks=%lld cameraWrites=%lld deny=%ld",mouseFrames,cameraFrames,activeFrames,heldChecks,cameraWrites,denyReason);log(text);}
+    auto now=GetTickCount64();if(now-lastStatus>=5000){lastStatus=now;char text[300];snprintf(text,sizeof text,"input=%lld camera=%lld diverted=%lld holdchecks=%lld cameraWrites=%lld deny=%ld",mouseFrames,cameraFrames,activeFrames,heldChecks,cameraWrites,denyReason);log(text);}
   }
   InterlockedExchange(&enabled,0);
   // Retain trampolines/module until process exit: native callbacks can be in flight.

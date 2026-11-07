@@ -30,6 +30,27 @@ extern "C" {
  void testLiftedCameraSite();
 }
 int main(){
+ require(freelook::parseHoldKey(L"",VK_F8)==VK_F8,"empty binding preserves legacy key");
+ require(freelook::parseHoldKey(L"f6",0)==VK_F6,"case insensitive function key");
+ require(freelook::parseHoldKey(L"F24",0)==VK_F24,"last function key");
+ require(freelook::parseHoldKey(L"Mouse4",0)==VK_XBUTTON1,"side mouse button");
+ require(freelook::parseHoldKey(L"LeftAlt",0)==VK_LMENU,"left modifier");
+ require(freelook::parseHoldKey(L"z",0)=='Z'&&freelook::parseHoldKey(L"0",0)=='0',"letter and digit bindings");
+ for(const auto* invalid:{L"F0",L"F25",L"F01",L"Mouse6",L"Ctrl+F8",L"unknown",L"123456789012345678901234567890123456"})
+   require(freelook::parseHoldKey(invalid,VK_F8)==-1,"invalid named binding never falls back silently");
+ for(int invalid:{-1,0,255,VK_ESCAPE,VK_RETURN,VK_TAB,VK_F10,int('V')})
+   require(!freelook::validHoldKey(invalid,false),"invalid/reserved key rejected");
+ require(freelook::validHoldKey('B',false)&&!freelook::validHoldKey('B',true),"Reclaimer voice exclusion retained");
+ wchar_t tempPath[MAX_PATH],iniPath[MAX_PATH];
+ require(GetTempPathW(MAX_PATH,tempPath)&&GetTempFileNameW(tempPath,L"flb",0,iniPath),"temporary binding profile created");
+ require(freelook::loadHoldKey(iniPath)==VK_F8,"missing settings default to F8");
+ require(WritePrivateProfileStringW(L"Freelook",L"HoldVirtualKey",L"117",iniPath),"write legacy profile");
+ require(freelook::loadHoldKey(iniPath)==VK_F6,"existing numeric setting preserved");
+ require(WritePrivateProfileStringW(L"Freelook",L"HoldKey",L"Mouse4",iniPath),"write named profile");
+ require(freelook::loadHoldKey(iniPath)==VK_XBUTTON1,"named binding overrides legacy setting");
+ require(WritePrivateProfileStringW(L"Freelook",L"HoldKey",L"typo",iniPath),"write invalid profile");
+ require(!freelook::validHoldKey(freelook::loadHoldKey(iniPath),true),"invalid profile refused");
+ require(DeleteFileW(iniPath),"temporary profile removed");
  std::vector<unsigned char> module(0xa3a000),tls(0x600),users(0x20),array(0x60),headers(0x48),unit(0x200),vehicle(0x100),observer(0x100);
  haloBase=(uintptr_t)module.data();put(module.data(),0xa39f9c,uint32_t(0));testVector[0]=(uintptr_t)tls.data();
  put(tls.data(),0x110,(uintptr_t)users.data());put(tls.data(),0x38,(uintptr_t)array.data());put(tls.data(),0x578,(uintptr_t)observer.data());
@@ -46,6 +67,11 @@ int main(){
  auto restored=[&](){applyCamera((uintptr_t)&camera);require(memcmp(&camera,&original,sizeof camera)==0,"native pose restored");};
  axis(.2f);require(!active,"F8 released: pass through");keys[VK_F8]=true;axis(.2f);changed();
  keys[VK_F8]=false;axis(.1f);clockMs+=1000;restored();require(!active&&!returning,"release finishes recenter");
+ holdKey=freelook::parseHoldKey(L"Mouse4",0);
+ keys[VK_F8]=true;axis(.2f);require(!active,"old key no longer activates legacy runtime");keys[VK_F8]=false;
+ keys[VK_XBUTTON1]=true;axis(.2f);changed();
+ keys[VK_XBUTTON1]=false;axis(.1f);clockMs+=1000;restored();require(!active,"rebound mouse button releases legacy runtime");
+ holdKey=VK_F8;
  keys[VK_F8]=true;axis(.2f);changed();put(unit.data(),0x10,uint32_t(0xffffffff));restored();require(!active&&!returning,"vehicle exit cancels orbit");
  put(unit.data(),0x10,uint32_t(0x20001));axis(.2f);changed();put(unit.data(),0xf4,0.f);restored();require(!active,"death cancels orbit");
  put(unit.data(),0xf4,1.f);axis(.2f);changed();focused=false;restored();require(!active,"focus loss cancels orbit");focused=true;
@@ -110,6 +136,16 @@ int main(){
  onLiftedCamera(contextAddress,0,0,(uintptr_t)&camera);
  require(x==.2f&&y==.1f&&memcmp(&camera,&original,sizeof camera)==0,"lifted release restores steering and camera");
  puts("PASS: lifted engine guest TLS, both axes, camera ownership and release");
+ holdKey=freelook::parseHoldKey(L"LeftAlt",0);
+ keys[VK_F8]=true;x=.2f;y=.1f;onLiftedInput(haloBase,contextAddress);
+ require(!active&&x==.2f&&y==.1f,"old key leaves lifted steering intact");keys[VK_F8]=false;
+ keys[VK_LMENU]=true;onLiftedInput(haloBase,contextAddress);
+ require(active&&x==0&&y==0,"rebound modifier activates lifted runtime");
+ keys[VK_LMENU]=false;x=.2f;y=.1f;onLiftedInput(haloBase,contextAddress);clockMs+=1000;
+ onLiftedCamera(contextAddress,0,0,(uintptr_t)&camera);
+ require(!active&&x==.2f&&y==.1f&&memcmp(&camera,&original,sizeof camera)==0,"rebound lifted release restores camera and steering");
+ holdKey=VK_F8;
+ puts("PASS: named and legacy binding profiles, invalid/reserved keys, rebound legacy/lifted hold and release");
  require(freelook::matchRemote(GetCurrentProcess(),(uintptr_t)testLiftedInputSite,freelook::inputEndBytes),"input fixture matches verified lifted instructions");
  require(freelook::matchRemote(GetCurrentProcess(),(uintptr_t)testLiftedCameraSite,freelook::cameraEndBytes),"camera fixture matches verified lifted instructions");
  require(MH_Initialize()==MH_OK,"lifted fixture hooks initialized");

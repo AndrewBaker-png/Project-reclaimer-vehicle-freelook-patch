@@ -31,6 +31,16 @@ Keep the entire extracted package together. If you move Reclaimer and the saved 
 
 Edit `freelook.ini` beside `Halo3Freelook.exe` to change the settings. The defaults use inverted vertical look, native sensitivity, 40 ms smoothing, and a 180 ms return. Restart the client and reload the mod after changing settings or switching builds.
 
+### Rebinding the freelook hold key (development branch)
+
+In the installed `freelook.ini`, add `HoldKey=Mouse4` under `[Freelook]` to use the first side mouse button, or `HoldKey=F6` for F6. Fully close and restart the client with the rebuilt patch after editing. Release the chosen key to recenter as usual.
+
+Names are case insensitive. Supported names: `F1`–`F24`, single letters `A`–`Z`, digits `0`–`9`, `Mouse1`–`Mouse5` (left, right, middle, first side, second side), `Shift`, `Ctrl`, `Alt`, their `Left`/`Right` variants, `Space`, `CapsLock`, `Insert`, `Delete`, `Home`, `End`, `PageUp`, `PageDown`, `Up`, `Down`, `Left`, and `Right`. This supports a single held key/button; key combinations and controller buttons are not supported.
+
+An absent or empty `HoldKey` uses the existing numeric `HoldVirtualKey` setting (119 = F8). A nonempty `HoldKey` overrides that number; an unknown name refuses activation and is reported in `freelook.log`. Escape, Enter, Tab, F10, V, and (on Reclaimer) B are reserved by menu lockout, emergency stop, or the patch's existing voice-chat exclusions.
+
+The patch polls Windows directly for this hold key, so it does not need a Reclaimer action binding. It does not consume that button's native game action: choose an unused key or remove conflicting assignments in Reclaimer. Native driving, aiming, chat, and controller bindings still belong to the game. Automatic conflict detection against Reclaimer's settings is not implemented. Custom bindings have automated coverage on both engine paths; in-game validation is pending.
+
 The r30 Installer prerelease includes setup, update/repair, uninstall, the combined game launcher, and the camera, cancellation, and path-safety fixes. Stop waits for a pending load to finish and for the runtime to acknowledge that its hooks are disabled. If confirmation fails, the helper returns an error and asks you to close the client. Older r30 runtimes cannot acknowledge shutdown; fully exit the old client before upgrading. Installation paths that would exceed the launcher's path buffer are refused with an instruction to use a shorter folder.
 
 The loader is session-only. It does not install a service or startup entry; use `Play-Reclaimer-with-Freelook.exe` for each new client session. Opening the original Reclaimer EXE directly still requires the separate start helper.

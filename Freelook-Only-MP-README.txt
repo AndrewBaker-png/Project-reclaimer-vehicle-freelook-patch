@@ -38,6 +38,17 @@ Every vehicle and seat has not been tested; universal compatibility is unverifie
    before trying again. Old r30 DLLs cannot acknowledge shutdown; restart them.
 
 loader-state.json reports waiting/loading/loaded/refused/cancelled/expired.
+Rebinding (development): under [Freelook] in the installed freelook.ini, add
+HoldKey=Mouse4 or HoldKey=F6. Names are case insensitive. Fully restart the
+client after editing. Empty/missing HoldKey uses legacy HoldVirtualKey (119=F8).
+Supported: F1-F24, A-Z, 0-9, Mouse1-Mouse5 (left/right/middle/side1/side2),
+Shift/Ctrl/Alt and Left/Right variants, Space, CapsLock, Insert, Delete,
+Home, End, PageUp, PageDown, Up, Down, Left, Right. Single key/button only.
+Escape/Enter/Tab/F10/V and Reclaimer B are reserved. Invalid bindings refuse
+activation; check freelook.log. Choose an unused key: its native game action
+still fires. Native game bindings must be changed in Reclaimer. Custom hold
+bindings are covered by automated tests; in-game validation is pending.
+
 It also records loadMayBePending when a load has not completed conclusively.
 loader.log records loader checks; freelook.log records actual DLL activation.
 The loader does not install a Windows service or permanent startup entry.
