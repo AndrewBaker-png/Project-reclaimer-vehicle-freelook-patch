@@ -69,24 +69,47 @@ static uintptr_t tlsSlot(size_t offset,uintptr_t context){
      !engineRead(vector+index*8,block)||!block||!engineRead(block+offset,value))return 0;
   return value;
 }
-static uintptr_t object(uint32_t datum,uint8_t type,uintptr_t context){
+enum class ObjectType : uint8_t { Biped=0, Vehicle=1, Giant=12 };
+static uintptr_t object(uint32_t datum,ObjectType& type,uintptr_t context){
   if(datum==0xffffffff)return 0;
   uintptr_t array=tlsSlot(0x38,context),table=0;uint32_t maximum=0;
   if(!array||!engineRead(array+0x48,table)||!table||!engineRead(array+0x20,maximum)||(datum&0xffff)>=maximum)return 0;
   uintptr_t header=table+uintptr_t(datum&0xffff)*0x18;
-  uint16_t salt=0;uint8_t actual=255;uintptr_t address=0;
-  if(!engineRead(header,salt)||salt!=(datum>>16)||!engineRead(header+3,actual)||actual!=type||!engineRead(header+0x10,address))return 0;
+  uint16_t salt=0;uintptr_t address=0;
+  if(!engineRead(header,salt)||salt!=(datum>>16)||!engineRead(header+3,type)||!engineRead(header+0x10,address))return 0;
   return address;
+}
+static bool unitHasSeats(uintptr_t parent){
+  uint32_t tag=0,count=0;
+  uintptr_t meta=0,table=0,tagMemory=0;
+  if(!engineRead(parent,tag)||tag==0xffffffff||
+     !engineRead(haloBase+0x20ad058,meta)||!meta||
+     !engineRead(meta+0x10,count)||(tag&0xffff)>=count||
+     !engineRead(meta+0x18,table)||!table||
+     !engineRead(haloBase+0x1fcf4c8,tagMemory)||!tagMemory)return false;
+  const auto entry=table+uintptr_t(tag&0xffff)*8;
+  uint16_t salt=0;
+  uint32_t packed=0;
+  if(!engineRead(entry+2,salt)||salt!=(tag>>16)||!engineRead(entry+4,packed)||!packed)return false;
+  const auto definition=tagMemory+uintptr_t(packed)*4;
+  uint32_t seats=0,seatData=0;
+  return engineRead(definition+0x258,seats)&&seats>0&&seats<=64&&
+         engineRead(definition+0x25c,seatData)&&seatData!=0;
 }
 static bool localVehicle(uint32_t& vehicle,uintptr_t context){
   // Native input-user zero -> unit. Resolve on the calling engine thread so
   // simulation and render snapshots each use their own valid object table.
   uintptr_t users=tlsSlot(0x110,context);uint32_t datum=0xffffffff;
   if(!users||!engineRead(users+0x14,datum)){denyReason=5;return false;}
-  uintptr_t biped=object(datum,0,context);float health=0;
-  if(!biped){denyReason=7;return false;}
+  ObjectType type{};
+  uintptr_t biped=object(datum,type,context);float health=0;
+  if(!biped||type!=ObjectType::Biped){denyReason=7;return false;}
   if(!engineRead(biped+0xf4,health)||!std::isfinite(health)||health<=0){denyReason=8;return false;}
-  if(!engineRead(biped+0x10,vehicle)||!object(vehicle,1,context)){denyReason=10;return false;}
+  if(!engineRead(biped+0x10,vehicle)||vehicle==datum){denyReason=10;return false;}
+  const auto parent=object(vehicle,type,context);
+  // Huge Grass implements the Mega Mantis as a biped and the Scarab as a giant.
+  const bool seatedUnit=liftedEngine.code&&(type==ObjectType::Biped||type==ObjectType::Giant);
+  if(!parent||(type!=ObjectType::Vehicle&&!(seatedUnit&&unitHasSeats(parent)))){denyReason=10;return false;}
   denyReason=0;
   return true;
 }
@@ -128,19 +151,30 @@ static void onAxis(void* savedFx,bool horizontal){
 }
 extern "C" void onInputX(void* savedFx){onAxis(savedFx,true);}
 extern "C" void onInputY(void* savedFx){onAxis(savedFx,false);}
-extern "C" void onLiftedInput(uintptr_t image,uintptr_t context){
+static uintptr_t currentGuestContext(){
+  uintptr_t key=0,context=0;
+  DWORD indexPlusOne=0;
+  if(!engineRead(liftedEngine.host+freelook::nativeContextKey,key)||!key||
+     !engineRead(key+0x18,indexPlusOne)||!indexPlusOne)return 0;
+  const DWORD previousError=GetLastError();
+  const auto entry=reinterpret_cast<uintptr_t>(TlsGetValue(indexPlusOne-1));
+  SetLastError(previousError);
+  if(entry>1)engineRead(entry,context);
+  return context;
+}
+extern "C" void onLiftedInput(uintptr_t image,uintptr_t userOffset){
+  if(image!=haloBase||userOffset!=0)return;
   InterlockedAdd64(&mouseFrames,2);
-  if(image!=haloBase)return;
   AcquireSRWLockExclusive(&stateLock);
-  if(beginInput(context)){
-    // The translated input loop has produced both axes. Consume them before
-    // downstream code reads them to steer the vehicle.
+  if(beginInput(down(holdKey)?currentGuestContext():0)){
+    // Reclaimer writes two pitch values for different flight inversion settings.
     auto* x=reinterpret_cast<float*>(image+freelook::liftedInputX);
     auto* y=reinterpret_cast<float*>(image+freelook::liftedInputY);
     consumeAxis(*x,true);
     consumeAxis(*y,false);
     *x=0;
     *y=0;
+    *reinterpret_cast<float*>(image+freelook::liftedFlightY)=0;
   }
   ReleaseSRWLockExclusive(&stateLock);
 }
@@ -272,7 +306,7 @@ static DWORD runWorker(){
     {haloBase+verifiedHookSites[2].rva,(void*)cameraResultHook,&cameraTrampoline}
   };
   const Hook liftedHooks[]={
-    {liftedEngine.code+freelook::inputEnd,(void*)liftedInputHook,&liftedInputTrampoline},
+    {liftedEngine.host+freelook::nativeInputEnd,(void*)liftedInputHook,&liftedInputTrampoline},
     {liftedEngine.code+freelook::cameraEnd,(void*)liftedCameraHook,&liftedCameraTrampoline}
   };
   const Hook* hooks=liftedEngine.code?liftedHooks:legacyHooks;
@@ -286,7 +320,7 @@ static DWORD runWorker(){
     return (uintptr_t)GetModuleHandleW(L"halo3.dll")==haloBase;
   };
   if(liftedEngine.code){
-    if(!freelook::liftedHookSitesMatch(GetCurrentProcess(),liftedEngine.code)){log("REFUSED: unsupported or modified lifted hook sites");return 4;}
+    if(!freelook::liftedHookSitesMatch(GetCurrentProcess(),liftedEngine)){log("REFUSED: unsupported or modified Reclaimer 0.10.0 hook sites");return 4;}
   }else{
     for(const auto& site:verifiedHookSites)if(!checkBytes(haloBase+site.rva,site.bytes,16)){log("REFUSED: unsupported or modified hook sites");return 4;}
   }
@@ -297,7 +331,7 @@ static DWORD runWorker(){
   for(size_t i=0;i<hookCount;i++)MH_QueueEnableHook((void*)hooks[i].address);
   hooksMayBeEnabled=true;
   if(MH_ApplyQueued()!=MH_OK){InterlockedExchange(&enabled,0);hooksMayBeEnabled=MH_DisableHook(MH_ALL_HOOKS)!=MH_OK;log("hook activation failed");return 7;}
-  log(liftedEngine.code?"ACTIVE: Reclaimer 0.10.0 lifted input/camera hooks; configured hold key":"ACTIVE: exactly 3 input/camera hooks; configured hold key; no cockpit, visor, HUD, graphics hooks or asset loading");
+  log(liftedEngine.code?"ACTIVE: Reclaimer 0.10.0 native input and translated camera hooks; configured hold key":"ACTIVE: exactly 3 input/camera hooks; configured hold key; no cockpit, visor, HUD, graphics hooks or asset loading");
   ULONGLONG lastStatus=GetTickCount64();
   while(WaitForSingleObject(stopEvent,33)==WAIT_TIMEOUT){
     if(!enginePresent())break;
@@ -307,7 +341,9 @@ static DWORD runWorker(){
   InterlockedExchange(&enabled,0);
   // Retain trampolines/module until process exit: native callbacks can be in flight.
   bool disabled=true;
-  if(enginePresent())for(size_t i=0;i<hookCount;i++){
+  const bool engineStillPresent=enginePresent();
+  for(size_t i=0;i<hookCount;i++){
+    if(!engineStillPresent&&!(liftedEngine.code&&i==0))continue;
     auto status=MH_DisableHook((void*)hooks[i].address);
     if(status!=MH_OK&&status!=MH_ERROR_DISABLED)disabled=false;
   }

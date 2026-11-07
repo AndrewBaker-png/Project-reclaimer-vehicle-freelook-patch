@@ -1,4 +1,4 @@
-Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.4
+Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.6
 
 Adds Windows x64 support for Project Reclaimer 0.10.0's recompiled Halo 3
 engine. The loader verifies the exact client SHA-256 and translated code

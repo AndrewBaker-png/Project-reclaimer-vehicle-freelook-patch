@@ -1,6 +1,6 @@
 # Project Reclaimer Vehicle Freelook Patch
 
-Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. Local package **30.4.4** adds **Project Reclaimer 0.10.0** on Windows x64 alongside the legacy **0.9.23** path. In-game validation of the 0.10.0 path is pending.
+Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. Local package **30.4.6** supports **Project Reclaimer 0.10.0** on Windows x64 alongside the legacy **0.9.23** path. In-game validation of the 0.10.0 path is pending.
 
 The project maintainer reports freelook working in both **ground and aerial vehicles**. It is intended for vehicle freelook generally, but every ground/aerial vehicle and seat has not been tested; universal compatibility remains unverified.
 
@@ -65,7 +65,7 @@ For an older portable package without uninstall support, stop the loader, close 
 
 ## Compatibility and limitations
 
-- The loader checks the exact supported Reclaimer executable and live hook sites. Version 0.10.0 uses two hooks in its translated machine code and its emulated thread-local storage. The legacy path checks the Halo 3 DLL hash and three hook sites.
+- The loader checks the exact supported Reclaimer executable and live hook sites. Version 0.10.0 hooks native mouse input and the translated camera. The legacy path checks the Halo 3 DLL hash and three hook sites.
 - Revision 30 retains the native third-person vehicle view. Cockpit models, visor/HUD overlays, F7/F9 controls, graphics hooks, and custom map assets are outside this build.
 - MCC support exists in the underlying launcher but has not been flight-tested for this revision. This package targets Halo 3 vehicles in Reclaimer 0.9.23 and 0.10.0.
 - Live multiplayer testing covers Huge Grass on the supported Reclaimer build. This does not establish compatibility with every map, server configuration, vehicle, or seat. Follow the server's mod rules and supported anti-cheat settings.

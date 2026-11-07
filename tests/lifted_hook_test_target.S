@@ -3,18 +3,15 @@
 
 .global testLiftedInput
 testLiftedInput:
- push r12
- push r13
- sub rsp,0x188
- mov r12,rcx
- mov r13,rdx
+ sub rsp,0xb8
+ movaps [rsp+0x90],xmm6
+ movaps [rsp+0xa0],xmm7
+ mov rax,rdx
 .global testLiftedInputSite
 testLiftedInputSite:
- mov rax,[rsp+0xd0]
- mov rcx,[rsp+0xd0]
- add rsp,0x188
- pop r13
- pop r12
+ movaps xmm6,[rsp+0x90]
+ movaps xmm7,[rsp+0xa0]
+ add rsp,0xb8
  ret
 
 .global testLiftedCamera
