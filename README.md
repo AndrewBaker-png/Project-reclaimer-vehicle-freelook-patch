@@ -1,6 +1,6 @@
 # Project Reclaimer Vehicle Freelook Patch
 
-Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. Build **Freelook 30.4.6** from `main` for **Project Reclaimer v0.10.0** on Windows x64. The project maintainer confirmed that Freelook works in-game on this Reclaimer version. The legacy **0.9.23** path is also supported.
+Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. **Freelook 30.4.6** supports **Project Reclaimer v0.10.0** on Windows x64. The project maintainer confirmed that Freelook works in-game on this Reclaimer version. The legacy **0.9.23** path is also supported.
 
 The project maintainer reports freelook working in both **ground and aerial vehicles**. It is intended for vehicle freelook generally, but every ground/aerial vehicle and seat has not been tested; universal compatibility remains unverified.
 
@@ -8,9 +8,7 @@ The project maintainer also reported successful live **Huge Grass** multiplayer 
 
 ## Download and install
 
-For Reclaimer v0.10.0, use the 30.4.6 ZIP produced by the [build from source](#build-from-source) steps below. The published 30.4.1 prerelease is for Reclaimer 0.9.23.
-
-1. Open the [r30 Installer prerelease](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer-30.4.1) and download **`Halo3-Freelook-Only-MP-r30-installer.zip`** under **Assets**. The source-code archives do not contain built binaries. A SHA-256 checksum is also attached.
+1. Download the [Freelook 30.4.6 installer ZIP](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/download/r30-installer-30.4.6/Halo3-Freelook-Only-MP-r30-installer.zip) for Project Reclaimer v0.10.0 on Windows x64 and verify it against the [SHA-256 checksum](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/download/r30-installer-30.4.6/SHA256SUMS-r30-installer.txt).
 2. Fully close Reclaimer. Extract the ZIP to a **separate folder**, such as `C:\Mods\Freelook-Setup`. Do not extract updates over an installed copy.
 3. Double-click **`Setup-Freelook.exe`**. Accept the detected installation to update, select an older portable mod folder manually, or choose a new writable destination. Review the installed/incoming versions and replacement count, then confirm.
 4. Double-click **`Play-Reclaimer-with-Freelook.exe` in the installed destination**. On first use, choose your Project Reclaimer client EXE. The launcher remembers it and starts the loader followed by the game on later launches. No commands need to be typed.
@@ -39,7 +37,7 @@ The loader is session-only. It does not install a service or startup entry; use 
 
 ## Install, update, and uninstall
 
-The [r30 Installer prerelease](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer-30.4.1) is package version **30.4.1**. Its ZIP includes setup, update/repair, launch, and uninstall helpers.
+The [Freelook 30.4.6 prerelease](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer-30.4.6) includes setup, update/repair, launch, and uninstall helpers.
 
 1. Fully close Reclaimer. Extract the new ZIP to a **separate folder**, not over your installed copy.
 2. Double-click **`Setup-Freelook.exe`** in the newly extracted folder. It detects registered installations. For an older portable copy, choose its existing mod folder manually. For a new installation, accept the default folder or select another writable destination.
