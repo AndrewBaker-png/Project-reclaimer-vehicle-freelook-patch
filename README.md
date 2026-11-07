@@ -1,12 +1,14 @@
 # Project Reclaimer Vehicle Freelook Patch
 
-Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. Local package **30.4.6** supports **Project Reclaimer 0.10.0** on Windows x64 alongside the legacy **0.9.23** path. In-game validation of the 0.10.0 path is pending.
+Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. Build **Freelook 30.4.6** from `main` for **Project Reclaimer v0.10.0** on Windows x64. The project maintainer confirmed that Freelook works in-game on this Reclaimer version. The legacy **0.9.23** path is also supported.
 
 The project maintainer reports freelook working in both **ground and aerial vehicles**. It is intended for vehicle freelook generally, but every ground/aerial vehicle and seat has not been tested; universal compatibility remains unverified.
 
-**Tested in live multiplayer:** the latest builds have been successfully used in live **Huge Grass** multiplayer matches on Project Reclaimer 0.9.23. The release remains a prerelease as broader compatibility testing continues. The loader does not change anti-cheat settings or bypass enforcement.
+The project maintainer also reported successful live **Huge Grass** multiplayer tests on Reclaimer 0.9.23. Broader map and seat coverage remains unverified.
 
 ## Download and install
+
+For Reclaimer v0.10.0, use the 30.4.6 ZIP produced by the [build from source](#build-from-source) steps below. The published 30.4.1 prerelease is for Reclaimer 0.9.23.
 
 1. Open the [r30 Installer prerelease](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer-30.4.1) and download **`Halo3-Freelook-Only-MP-r30-installer.zip`** under **Assets**. The source-code archives do not contain built binaries. A SHA-256 checksum is also attached.
 2. Fully close Reclaimer. Extract the ZIP to a **separate folder**, such as `C:\Mods\Freelook-Setup`. Do not extract updates over an installed copy.

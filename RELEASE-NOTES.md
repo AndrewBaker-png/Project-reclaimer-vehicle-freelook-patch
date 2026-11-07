@@ -2,6 +2,8 @@
 
 Recognizes biped and giant parent objects with seats in Reclaimer 0.10.0. Huge Grass uses those object types for the Mega Mantis and Scarab.
 
+The project maintainer confirmed Freelook works in-game on Reclaimer v0.10.0 with the 30.4.6 code on `main`.
+
 # Local package 30.4.5 — Reclaimer 0.10.0 mouse input
 
 Hooks Reclaimer's native input bridge to capture the mouse axes used during gameplay. The earlier translated input routine received zero callbacks in a live match. The camera hook continues to use the translated engine.
@@ -10,7 +12,7 @@ Hooks Reclaimer's native input bridge to capture the mouse axes used during game
 
 Adds a separate Windows x64 path for the recompiled Halo 3 engine. Verifies the exact 0.10.0 client checksum and translated code anchors. Captures both completed input axes before steering consumes them and edits the local user's returned camera through two register-preserving hooks. Resolves engine state through the CPU context's emulated TLS. Retains the legacy 0.9.23 and MCC paths.
 
-In-game testing of 0.10.0 is pending. Local test package, unpublished.
+This local test package preceded the 0.10.0 in-game confirmation for 30.4.6.
 
 # Local package 30.4.3 — Camera hook register preservation
 

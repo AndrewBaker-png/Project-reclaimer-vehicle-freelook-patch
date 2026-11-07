@@ -23,7 +23,7 @@
     "source": "https://github.com/ProjectReclaimer/project-reclaimer-releases/releases/tag/v0.10.0",
     "inputHook": "client image + 0x2f45f05",
     "cameraHook": "translated allocation + 0x584efe",
-    "gameplayValidation": "Pending"
+    "gameplayValidation": "Freelook 30.4.6 on main works in-game, as reported by the project maintainer"
   },
   "multiplayer": "Latest builds tested successfully in live Huge Grass multiplayer matches on Reclaimer 0.9.23, as reported by the project maintainer; broader coverage not yet documented",
   "sourceRevision": "073ff42",

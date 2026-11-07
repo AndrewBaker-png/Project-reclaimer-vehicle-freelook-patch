@@ -3,7 +3,7 @@ Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.6
 Adds Windows x64 support for Project Reclaimer 0.10.0's recompiled Halo 3
 engine. The loader verifies the exact client SHA-256 and translated code
 anchors, then uses two input/camera hooks and the engine's emulated TLS.
-In-game validation on 0.10.0 is pending.
+The project maintainer confirmed that Freelook works in-game on Reclaimer 0.10.0.
 
 The latest builds have been successfully used in live Huge Grass multiplayer
 matches on Project Reclaimer 0.9.23, as reported by the project maintainer.
@@ -107,7 +107,8 @@ Build: Build-Freelook-Only.ps1. The package manifest lists hashes and checks.
 This installer package retains the original r30 runtime filename and
 includes the r30 audit fixes plus versioned setup, update/repair, and uninstall.
 Source runtime: src/freelook_only.cpp, with the shared verified input/camera
-sites, math and MinHook stubs. Supported client is pinned Reclaimer 0.9.23.
+sites, math and MinHook stubs. Supported clients are pinned Reclaimer 0.10.0
+and legacy 0.9.23 on Windows x64.
 MCC requires its Anti-Cheat Disabled launch option and is not flight-tested.
 No game assets or game data are included. See the GitHub repository for releases.
 
