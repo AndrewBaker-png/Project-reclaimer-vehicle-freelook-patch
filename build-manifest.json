@@ -1,6 +1,6 @@
 {
   "revision": 30,
-  "packageVersion": "30.4.4",
+  "packageVersion": "30.4.6",
   "build": "r30-installer",
   "profile": "F8 freelook only",
   "compiler": {
@@ -21,7 +21,7 @@
     "version": "0.10.0",
     "sha256": "8246e8a4a6e90dcd2305ca402a5de3f6b2ab295fc86e3987ac100d8dcd38312e",
     "source": "https://github.com/ProjectReclaimer/project-reclaimer-releases/releases/tag/v0.10.0",
-    "inputHook": "translated allocation + 0x5a4ca9",
+    "inputHook": "client image + 0x2f45f05",
     "cameraHook": "translated allocation + 0x584efe",
     "gameplayValidation": "Pending"
   },

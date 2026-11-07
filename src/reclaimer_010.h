@@ -8,16 +8,20 @@ namespace freelook {
 inline constexpr char reclaimer010Hash[] =
     "8246e8a4a6e90dcd2305ca402a5de3f6b2ab295fc86e3987ac100d8dcd38312e";
 
-// Windows x64 machine-code cache for the supported Halo 3 build. These
-// offsets are relative to the executable allocation, not to the client PE.
+// Windows x64 machine-code cache for the supported Halo 3 build.
 inline constexpr uintptr_t liftedInput = 0x5a31a0;
 inline constexpr uintptr_t liftedCamera = 0x584d20;
-inline constexpr uintptr_t inputEnd = liftedInput + 0x1b09;
 inline constexpr uintptr_t cameraEnd = liftedCamera + 0x1de;
 inline constexpr uintptr_t liftedInputX = 0x222a054;
 inline constexpr uintptr_t liftedInputY = 0x222a058;
-inline constexpr unsigned char inputEndBytes[] = {
-    0x48,0x8b,0x84,0x24,0xd0,0x00,0x00,0x00,0x48,0x8b,0x8c,0x24,0xd0,0x00,0x00,0x00
+inline constexpr uintptr_t liftedFlightY = 0x222a05c;
+
+// RVAs in the Reclaimer client PE. The native input bridge writes the
+// processed mouse axes into the guest image before the translated game reads them.
+inline constexpr uintptr_t nativeInputEnd = 0x2f45f05;
+inline constexpr uintptr_t nativeContextKey = 0x4936218;
+inline constexpr unsigned char nativeInputEndBytes[] = {
+    0x0f,0x28,0xb4,0x24,0x90,0x00,0x00,0x00,0x0f,0x28,0xbc,0x24,0xa0,0x00,0x00,0x00
 };
 inline constexpr unsigned char cameraEndBytes[] = {
     0x48,0x8b,0x5c,0x24,0x20,0x4c,0x8b,0x64,0x24,0x28,0x48,0x83,0xc4,0x30,0x48,0x89
@@ -27,6 +31,7 @@ struct LiftedEngine {
     uintptr_t code = 0;
     uintptr_t image = 0;
     uintptr_t tlsVector = 0;
+    uintptr_t host = 0;
 };
 
 template<class T>
@@ -77,13 +82,24 @@ inline LiftedEngine findLiftedEngine(HANDLE process) {
             !matchRemote(process, candidate.tlsVector, tlsEntry) ||
             !readRemote(process, candidate.image + 0xa39f9c, tlsIndex) || tlsIndex > 1023) continue;
         if (found.code) return {};
+        candidate.host = reinterpret_cast<uintptr_t>(helper.AllocationBase);
         found = candidate;
     }
     return found;
 }
 
-inline bool liftedHookSitesMatch(HANDLE process, uintptr_t code) {
-    return matchRemote(process, code + inputEnd, inputEndBytes) &&
-           matchRemote(process, code + cameraEnd, cameraEndBytes);
+inline bool liftedHookSitesMatch(HANDLE process, const LiftedEngine& engine) {
+    constexpr unsigned char nativeAxisStores[] = {
+        0xf3,0x44,0x0f,0x11,0xa4,0x01,0x54,0xa0,0x22,0x02,
+        0xf3,0x0f,0x11,0xb4,0x01,0x58,0xa0,0x22,0x02,
+        0xf3,0x0f,0x11,0x84,0x01,0x5c,0xa0,0x22,0x02
+    };
+    constexpr unsigned char contextLookup[] = {
+        0x48,0x8b,0x05,0x67,0xbc,0x5a,0x01,0x8b,0x70,0x18
+    };
+    return matchRemote(process, engine.host + nativeInputEnd - sizeof nativeAxisStores, nativeAxisStores) &&
+           matchRemote(process, engine.host + nativeInputEnd, nativeInputEndBytes) &&
+           matchRemote(process, engine.host + 0x338a5aa, contextLookup) &&
+           matchRemote(process, engine.code + cameraEnd, cameraEndBytes);
 }
 }

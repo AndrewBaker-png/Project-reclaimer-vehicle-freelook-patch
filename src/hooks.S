@@ -26,7 +26,10 @@
  sub rsp,0x230
  mov [rsp+0x220],rax
  fxsave64 [rsp+0x20]
-.if \lifted
+.if \lifted == 2
+ mov rcx,[rax+0x68]
+ mov rdx,[rax+0x70]
+.elseif \lifted
  mov rcx,[rax+0x18]
  mov rdx,[rax+0x10]
  mov r8,[rax+0x58]
@@ -60,7 +63,7 @@ MIDHOOK inputYHook, onInputY, inputYTrampoline
 MIDHOOK cameraHook, onCamera, cameraTrampoline
 #ifdef FREELOOK_LIFTED_HOOKS
 # Pass saved R12, R13, RBX and RAX to the lifted-engine callbacks.
-MIDHOOK liftedInputHook, onLiftedInput, liftedInputTrampoline, 1
+MIDHOOK liftedInputHook, onLiftedInput, liftedInputTrampoline, 2
 MIDHOOK liftedCameraHook, onLiftedCamera, liftedCameraTrampoline, 1
 #endif
 

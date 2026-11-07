@@ -1,3 +1,11 @@
+# Local package 30.4.6 — Mega Mantis and Scarab
+
+Recognizes biped and giant parent objects with seats in Reclaimer 0.10.0. Huge Grass uses those object types for the Mega Mantis and Scarab.
+
+# Local package 30.4.5 — Reclaimer 0.10.0 mouse input
+
+Hooks Reclaimer's native input bridge to capture the mouse axes used during gameplay. The earlier translated input routine received zero callbacks in a live match. The camera hook continues to use the translated engine.
+
 # Local package 30.4.4 — Reclaimer 0.10.0
 
 Adds a separate Windows x64 path for the recompiled Halo 3 engine. Verifies the exact 0.10.0 client checksum and translated code anchors. Captures both completed input axes before steering consumes them and edits the local user's returned camera through two register-preserving hooks. Resolves engine state through the CPU context's emulated TLS. Retains the legacy 0.9.23 and MCC paths.
