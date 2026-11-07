@@ -10,6 +10,7 @@
 #include "module_path.h"
 #include "runtime_control.h"
 #ifdef FREELOOK_ONLY
+#include "reclaimer_010.h"
 static const wchar_t runtimeDllName[]=L"Halo3VehicleFreelook-only-mp-r30.dll";
 static const wchar_t stopEventPattern[]=L"Local\\Halo3VehicleFreelookOnlyMP30Stop-%lu";
 static_assert(sizeof verifiedHookSites/sizeof verifiedHookSites[0]==3);
@@ -20,7 +21,20 @@ static const wchar_t stopEventPattern[]=L"Local\\Halo3VehicleFreelookNativeR29St
 static bool reclaimerMode=false;
 static bool ambiguousGame=false;
 static uintptr_t module(DWORD pid,const wchar_t* name,wchar_t* path=nullptr){uintptr_t base=0;HANDLE s=CreateToolhelp32Snapshot(TH32CS_SNAPMODULE|TH32CS_SNAPMODULE32,pid);MODULEENTRY32W e={sizeof e};if(Module32FirstW(s,&e))do{if(!_wcsicmp(e.szModule,name)){base=(uintptr_t)e.modBaseAddr;if(path)wcscpy(path,e.szExePath);break;}}while(Module32NextW(s,&e));CloseHandle(s);return base;}
-static DWORD findGame(){DWORD pid=0;HANDLE s=CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);PROCESSENTRY32W e={sizeof e};if(Process32FirstW(s,&e))do{bool candidate=reclaimerMode?(wcsstr(e.szExeFile,L"project-reclaimer-client")&&module(e.th32ProcessID,L"halo3.dll")):!_wcsicmp(e.szExeFile,L"MCC-Win64-Shipping.exe");if(candidate){if(pid){ambiguousGame=true;CloseHandle(s);return 0;}pid=e.th32ProcessID;}}while(Process32NextW(s,&e));CloseHandle(s);return pid;}
+static bool isReclaimerEngine(const PROCESSENTRY32W& entry){
+ if(!wcsstr(entry.szExeFile,L"project-reclaimer-client"))return false;
+ if(module(entry.th32ProcessID,L"halo3.dll"))return true;
+#ifdef FREELOOK_ONLY
+ HANDLE process=OpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ,FALSE,entry.th32ProcessID);
+ if(!process)return false;
+ auto engine=freelook::findLiftedEngine(process);
+ CloseHandle(process);
+ return engine.code!=0;
+#else
+ return false;
+#endif
+}
+static DWORD findGame(){DWORD pid=0;HANDLE s=CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);PROCESSENTRY32W e={sizeof e};if(Process32FirstW(s,&e))do{bool candidate=reclaimerMode?isReclaimerEngine(e):!_wcsicmp(e.szExeFile,L"MCC-Win64-Shipping.exe");if(candidate){if(pid){ambiguousGame=true;CloseHandle(s);return 0;}pid=e.th32ProcessID;}}while(Process32NextW(s,&e));CloseHandle(s);return pid;}
 static bool commandLine(HANDLE process,wchar_t* out,size_t count){
  using Query=LONG(NTAPI*)(HANDLE,PROCESSINFOCLASS,PVOID,ULONG,PULONG);
  auto query=(Query)GetProcAddress(GetModuleHandleW(L"ntdll.dll"),"NtQueryInformationProcess");
@@ -63,15 +77,28 @@ int wmain(int argc,wchar_t** argv){
  do{if(wcsstr(entry.szModule,L"Halo3VehicleFreelook"))otherRuntime=true;}while(Module32NextW(loaded,&entry));CloseHandle(loaded);
  if(otherRuntime){puts("Freelook runtime already resident. Fully close and restart Reclaimer/MCC before this isolated MP test. No injection attempted.");return 22;}
 #endif
- HANDLE process=OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION|PROCESS_VM_READ,FALSE,pid);if(!process){printf("Cannot inspect MCC: Windows error %lu\n",GetLastError());return 3;}
- wchar_t cmd[16384];if(!commandLine(process,cmd,16384)||(reclaimerMode?!wcsstr(cmd,L"probe-engine-worker"):(!wcsstr(cmd,L"-no-eac")&&!wcsstr(cmd,L"-eac-nop-loaded")))){puts("Refused: could not verify MCC mod mode or the standalone Reclaimer engine worker.");CloseHandle(process);return 4;}
+ HANDLE process=OpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ,FALSE,pid);if(!process){printf("Cannot inspect game process: Windows error %lu\n",GetLastError());return 3;}
  wchar_t gamePath[MAX_PATH];DWORD size=MAX_PATH;if(!QueryFullProcessImageNameW(process,0,gamePath,&size)){CloseHandle(process);return 5;}
+ bool lifted=false;
+#ifdef FREELOOK_ONLY
+ if(reclaimerMode&&!module(pid,L"halo3.dll")){
+   if(!hashFile(gamePath,freelook::reclaimer010Hash)){puts("Refused: client executable differs from the verified Reclaimer 0.10.0 build.");CloseHandle(process);return 6;}
+   const auto engine=freelook::findLiftedEngine(process);
+   if(!engine.code){puts("Waiting for the verified Reclaimer 0.10.0 engine.");CloseHandle(process);return 1;}
+   if(!freelook::liftedHookSitesMatch(process,engine.code)){puts("Refused: Reclaimer 0.10.0 live input or camera hook site differs.");CloseHandle(process);return 17;}
+   printf("Verified Reclaimer 0.10.0 PID %lu, exact client SHA256 and both live lifted hook sites.\n",pid);
+   lifted=true;
+ }
+#endif
+ if(!lifted){
+ wchar_t cmd[16384];if(!commandLine(process,cmd,16384)||(reclaimerMode?!wcsstr(cmd,L"probe-engine-worker"):(!wcsstr(cmd,L"-no-eac")&&!wcsstr(cmd,L"-eac-nop-loaded")))){puts("Refused: could not verify MCC mod mode or the standalone Reclaimer engine worker.");CloseHandle(process);return 4;}
  if(!hashFile(gamePath,reclaimerMode?expectedReclaimerHash:expectedExeHash)){puts("Refused: client executable differs from the verified local build.");CloseHandle(process);return 6;}
  wchar_t haloPath[MAX_PATH];uintptr_t halo=module(pid,L"halo3.dll",haloPath);if(!halo){puts("Load Halo 3 first, then run the launcher again.");CloseHandle(process);return 7;}
- if(!hashFile(haloPath,expectedHaloHash)){puts("Refused: Halo 3 DLL differs from the verified local build.");return 8;}
+ if(!hashFile(haloPath,expectedHaloHash)){puts("Refused: Halo 3 DLL differs from the verified local build.");CloseHandle(process);return 8;}
  for(const auto& site:verifiedHookSites){unsigned char bytes[16];SIZE_T n=0;if(!ReadProcessMemory(process,(void*)(halo+site.rva),bytes,16,&n)||n!=16||memcmp(bytes,site.bytes,16)){printf("Refused: live hook site 0x%llx differs from the verified build (already modded or unsupported).\n",(unsigned long long)site.rva);CloseHandle(process);return 17;}}
- CloseHandle(process);
  printf("Verified %s PID %lu, runtime, exact client/Halo 3 SHA256 hashes and all %zu live hook sites.\n",reclaimerMode?"Reclaimer":"MCC",pid,sizeof verifiedHookSites/sizeof verifiedHookSites[0]);
+ }
+ CloseHandle(process);
  if(probe){puts("Probe only; no process memory changed.");return 0;}
  wchar_t dll[MAX_PATH];
  if(!freelook::siblingModulePath(nullptr,runtimeDllName,dll)){puts("Cannot resolve the runtime DLL path, or the installation path is too long. Move the mod to a shorter folder. No injection attempted.");return 24;}
@@ -106,7 +133,7 @@ int wmain(int argc,wchar_t** argv){
  }
 #endif
 #ifdef FREELOOK_ONLY
- puts("Freelook-only MP test build loaded: three input/camera hooks, no cockpit, visor, HUD or rendering hooks. Hold F8 in a vehicle; release to recenter.\nCheck freelook.log. Stop with this launcher --stop or Ctrl+Shift+F10.");
+ printf("Freelook-only MP test build loaded: %s input/camera hooks. Hold F8 in a vehicle; release to recenter.\nCheck freelook.log. Stop with this launcher --stop or Ctrl+Shift+F10.\n",lifted?"two lifted":"three");
 #else
  puts("Prototype loaded. Check freelook.log and visor-hud.log for status. Hold F8 while in a Halo 3 vehicle.\nStop with this launcher --stop, or Ctrl+Shift+F10. Game files remain unchanged.");
 #endif

@@ -1,4 +1,9 @@
-Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.3
+Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.4
+
+Adds Windows x64 support for Project Reclaimer 0.10.0's recompiled Halo 3
+engine. The loader verifies the exact client SHA-256 and translated code
+anchors, then uses two input/camera hooks and the engine's emulated TLS.
+In-game validation on 0.10.0 is pending.
 
 The latest builds have been successfully used in live Huge Grass multiplayer
 matches on Project Reclaimer 0.9.23, as reported by the project maintainer.
@@ -21,7 +26,8 @@ Every vehicle and seat has not been tested; universal compatibility is unverifie
 3. The loader automatically verifies and injects when the Halo 3 engine is
    ready. It can also be started after entering the game. In a source checkout
    the helper is at the repository root; in the ZIP it is beside the launcher.
-   Exact client/game hashes and three hook sites are still checked.
+   Exact client hashes and live hook sites are checked. Legacy engines also
+   require the supported Halo 3 DLL hash.
 4. Hold F8 in a vehicle and move the mouse to orbit the native camera.
    Release F8 to recenter. Normal third-person vehicle view stays in use.
 5. Stop-Reclaimer-Freelook-Only.cmd cancels a pending load and stops an active

@@ -1,6 +1,6 @@
 # Project Reclaimer Vehicle Freelook Patch
 
-Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. This is the standalone **revision 30** free-look build for **Project Reclaimer 0.9.23** on Windows x64.
+Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. Local package **30.4.4** adds **Project Reclaimer 0.10.0** on Windows x64 alongside the legacy **0.9.23** path. In-game validation of the 0.10.0 path is pending.
 
 The project maintainer reports freelook working in both **ground and aerial vehicles**. It is intended for vehicle freelook generally, but every ground/aerial vehicle and seat has not been tested; universal compatibility remains unverified.
 
@@ -55,9 +55,9 @@ For an older portable package without uninstall support, stop the loader, close 
 
 ## Compatibility and limitations
 
-- The loader checks the supported Reclaimer executable, Halo 3 engine hashes, and three hook sites. It refuses incompatible builds and other resident free-look revisions. It does not automatically retry a compatibility refusal or failed load.
+- The loader checks the exact supported Reclaimer executable and live hook sites. Version 0.10.0 uses two hooks in its translated machine code and its emulated thread-local storage. The legacy path checks the Halo 3 DLL hash and three hook sites.
 - Revision 30 retains the native third-person vehicle view. Cockpit models, visor/HUD overlays, F7/F9 controls, graphics hooks, and custom map assets are outside this build.
-- MCC support exists in the underlying launcher but has not been flight-tested for this revision. This prerelease targets Reclaimer 0.9.23.
+- MCC support exists in the underlying launcher but has not been flight-tested for this revision. This package targets Halo 3 vehicles in Reclaimer 0.9.23 and 0.10.0.
 - Live multiplayer testing covers Huge Grass on the supported Reclaimer build. This does not establish compatibility with every map, server configuration, vehicle, or seat. Follow the server's mod rules and supported anti-cheat settings.
 
 `loader-state.json` records loader status. `loader.log` records compatibility and load checks; `freelook.log` records DLL activation. If loading is refused, check these files and the supported version before restarting.

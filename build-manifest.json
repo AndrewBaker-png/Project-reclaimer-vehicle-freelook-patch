@@ -1,6 +1,6 @@
 {
   "revision": 30,
-  "packageVersion": "30.4.3",
+  "packageVersion": "30.4.4",
   "build": "r30-installer",
   "profile": "F8 freelook only",
   "compiler": {
@@ -16,6 +16,14 @@
     "version": "0.9.23",
     "sha256": "ceef542ac17980d178e281ebf510b4aaaf28ef650a288f1d68e8250731ad7e70",
     "source": "https://github.com/ProjectReclaimer/project-reclaimer-releases/releases/tag/v0.9.23"
+  },
+  "reclaimer010": {
+    "version": "0.10.0",
+    "sha256": "8246e8a4a6e90dcd2305ca402a5de3f6b2ab295fc86e3987ac100d8dcd38312e",
+    "source": "https://github.com/ProjectReclaimer/project-reclaimer-releases/releases/tag/v0.10.0",
+    "inputHook": "translated allocation + 0x5a4ca9",
+    "cameraHook": "translated allocation + 0x584efe",
+    "gameplayValidation": "Pending"
   },
   "multiplayer": "Latest builds tested successfully in live Huge Grass multiplayer matches on Reclaimer 0.9.23, as reported by the project maintainer; broader coverage not yet documented",
   "sourceRevision": "073ff42",

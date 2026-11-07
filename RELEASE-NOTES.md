@@ -1,3 +1,9 @@
+# Local package 30.4.4 — Reclaimer 0.10.0
+
+Adds a separate Windows x64 path for the recompiled Halo 3 engine. Verifies the exact 0.10.0 client checksum and translated code anchors. Captures both completed input axes before steering consumes them and edits the local user's returned camera through two register-preserving hooks. Resolves engine state through the CPU context's emulated TLS. Retains the legacy 0.9.23 and MCC paths.
+
+In-game testing of 0.10.0 is pending. Local test package, unpublished.
+
 # Local package 30.4.3 — Camera hook register preservation
 
 Fixes a camera detour that used the standard C++ calling convention while Halo callers rely on volatile R11 and XMM3-5 surviving. An assembly wrapper preserves the original function's output register state across Freelook processing. Adds 10,000 native regression calls with a deliberately clobbering callback. This addresses the observed F8 activation crash path; live verification is still required. Not yet published.

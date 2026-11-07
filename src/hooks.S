@@ -2,7 +2,7 @@
 .text
 # Save the interrupted machine state, including flags, x87/SSE state and all GPRs.
 # MinHook relocates the overwritten instructions; these stubs run before them.
-.macro MIDHOOK name, callback, trampoline
+.macro MIDHOOK name, callback, trampoline, lifted=0
 .global \name
 \name:
  pushfq
@@ -26,7 +26,14 @@
  sub rsp,0x230
  mov [rsp+0x220],rax
  fxsave64 [rsp+0x20]
+.if \lifted
+ mov rcx,[rax+0x18]
+ mov rdx,[rax+0x10]
+ mov r8,[rax+0x58]
+ mov r9,[rax+0x70]
+.else
  lea rcx,[rsp+0x20]
+.endif
  call \callback
  fxrstor64 [rsp+0x20]
  mov rsp,[rsp+0x220]
@@ -51,6 +58,11 @@
 MIDHOOK inputXHook, onInputX, inputXTrampoline
 MIDHOOK inputYHook, onInputY, inputYTrampoline
 MIDHOOK cameraHook, onCamera, cameraTrampoline
+#ifdef FREELOOK_LIFTED_HOOKS
+# Pass saved R12, R13, RBX and RAX to the lifted-engine callbacks.
+MIDHOOK liftedInputHook, onLiftedInput, liftedInputTrampoline, 1
+MIDHOOK liftedCameraHook, onLiftedCamera, liftedCameraTrampoline, 1
+#endif
 
 # Preserve the original function's private ABI, including volatile registers
 # used by callers (R11 is a player-loop increment; XMM3-5 hold distances).

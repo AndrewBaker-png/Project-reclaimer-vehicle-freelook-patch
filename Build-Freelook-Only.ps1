@@ -16,7 +16,7 @@ try {
     @{Name='math_tests';Sources=@('tests/math_tests.cpp')},
     @{Name='hook_tests';Sources=@('tests/hook_tests.cpp','tests/hook_test_target.S','src/hooks.S')+$minhook},
     @{Name='camera_copy_tests';Sources=@('tests/camera_copy_tests.cpp')},
-    @{Name='freelook_only_tests';Sources=@('tests/freelook_only_tests.cpp','src/hooks.S')+$minhook},
+    @{Name='freelook_only_tests';Sources=@('-DFREELOOK_LIFTED_HOOKS','tests/freelook_only_tests.cpp','tests/lifted_hook_test_target.S','src/hooks.S')+$minhook},
     @{Name='module_path_tests';Sources=@('tests/module_path_tests.cpp')},
     @{Name='runtime_control_tests';Sources=@('tests/runtime_control_tests.cpp')}
   )
@@ -27,7 +27,7 @@ try {
     & $exe
     if($LASTEXITCODE){throw ($test.Name+' failed')}
   }
-  & $zig c++ @common '-shared' 'src/freelook_only.cpp' 'src/hooks.S' @minhook '-luser32' '-o' (Join-Path $build 'Halo3VehicleFreelook-only-mp-r30.dll')
+  & $zig c++ @common '-DFREELOOK_LIFTED_HOOKS' '-shared' 'src/freelook_only.cpp' 'src/hooks.S' @minhook '-luser32' '-o' (Join-Path $build 'Halo3VehicleFreelook-only-mp-r30.dll')
   if($LASTEXITCODE){throw 'Freelook-only runtime build failed'}
   & $zig c++ @common 'src/launcher.cpp' '-municode' '-lbcrypt' '-o' (Join-Path $build 'Halo3Freelook.exe')
   if($LASTEXITCODE){throw 'Freelook-only launcher build failed'}
@@ -69,7 +69,7 @@ try {
   $files=@('Play-Reclaimer-with-Freelook.exe','Halo3Freelook.exe','Halo3VehicleFreelook-only-mp-r30.dll','freelook.ini','README.txt','Start-Reclaimer-Freelook-Only.ps1','Start-Reclaimer-Freelook-Only.cmd','Stop-Reclaimer-Freelook-Only.cmd','MINHOOK-LICENSE.txt','HCM-LICENSE.txt','Setup-Freelook.exe','Uninstall-Freelook.exe','Manage-Freelook.ps1','Add-Freelook-Defender-Exclusion.ps1')
   $hashes=[ordered]@{}
   foreach($name in $files){$hashes[$name]=(Get-FileHash (Join-Path $build $name) -Algorithm SHA256).Hash}
-  $manifest=[ordered]@{revision=30;packageVersion='30.4.3';build='r30-installer';profile='F8 freelook only';hooks=@('input X 0x187b89','input Y 0x187bb2','camera 0x17eb20');checks='201 camera bases; 10,000 native hooks; 100,000 camera copies; actual F8 runtime hold/release, orbit/FOV isolation, exit, death, focus, menu lockout, vehicle identity, 128 revisited cameras and complete restoration; bounded module paths; runtime shutdown acknowledgment; PowerShell startup/cancellation/refusal/pending-load cases; actual DLL cancellation during startup; PE imports checked for absence of graphics/network libraries and HUD/mesh dependencies';multiplayer='Latest builds tested successfully in live Huge Grass multiplayer matches on Reclaimer 0.9.23, as reported by the project maintainer; broader coverage not yet documented';cockpit=$false;visor=$false;hud=$false;graphicsHooks=$false;customAssets=$false;files=$hashes}
+  $manifest=[ordered]@{revision=30;packageVersion='30.4.4';build='r30-installer';profile='F8 freelook only';hooks=@('legacy input X 0x187b89','legacy input Y 0x187bb2','legacy camera 0x17eb20','Reclaimer 0.10.0 lifted input 0x5a4ca9','Reclaimer 0.10.0 lifted camera 0x584efe');checks='201 camera bases; 10,000 native hooks; 100,000 camera copies; actual F8 runtime hold/release, orbit/FOV isolation, exit, death, focus, menu lockout, vehicle identity, 128 revisited cameras and complete restoration; bounded module paths; runtime shutdown acknowledgment; PowerShell startup/cancellation/refusal/pending-load cases; actual DLL cancellation during startup; PE imports checked for absence of graphics/network libraries and HUD/mesh dependencies';multiplayer='Huge Grass multiplayer tested on Reclaimer 0.9.23 as reported by the project maintainer. Reclaimer 0.10.0 in-game testing pending.';cockpit=$false;visor=$false;hud=$false;graphicsHooks=$false;customAssets=$false;files=$hashes}
   [IO.File]::WriteAllText((Join-Path $build 'manifest.json'),($manifest | ConvertTo-Json -Depth 5)+[Environment]::NewLine)
   $release=Join-Path $root 'release'
   New-Item -ItemType Directory -Path $release -Force | Out-Null

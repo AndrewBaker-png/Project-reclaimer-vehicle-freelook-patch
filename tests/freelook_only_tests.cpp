@@ -23,6 +23,12 @@ static ULONGLONG testClock(){return clockMs;}
 static void require(bool ok,const char* why){if(!ok){fprintf(stderr,"FAIL: %s\n",why);exit(1);}}
 template<class T> static void put(void* base,size_t offset,T value){memcpy((char*)base+offset,&value,sizeof value);}
 static void axis(float delta){alignas(16) unsigned char fx[512]{};put(fx,160,delta);onInputX(fx);float out;memcpy(&out,fx+160,4);require(out==(active?0:delta),"mouse diversion only during active hold");}
+extern "C" {
+ void testLiftedInput(uintptr_t image,uintptr_t context);
+ uintptr_t testLiftedCamera(uintptr_t context,int user,uintptr_t camera);
+ void testLiftedInputSite();
+ void testLiftedCameraSite();
+}
 int main(){
  std::vector<unsigned char> module(0xa3a000),tls(0x600),users(0x20),array(0x60),headers(0x48),unit(0x200),vehicle(0x100),observer(0x100);
  haloBase=(uintptr_t)module.data();put(module.data(),0xa39f9c,uint32_t(0));testVector[0]=(uintptr_t)tls.data();
@@ -78,4 +84,48 @@ int main(){
  VirtualFree(transient,0,MEM_RELEASE);
  require(sizeof verifiedHookSites/sizeof verifiedHookSites[0]==3,"only input/camera sites");
  puts("PASS: F8 input/orbit/FOV isolation, recenter, exit/death/focus/menu/identity, 128 revisited cameras, complete restoration, native ownership and retired camera lifetime");
+
+ module.resize(freelook::liftedInputY+sizeof(float));
+ haloBase=(uintptr_t)module.data();
+ liftedEngine={1,haloBase,0};
+ unsigned char context[0x2e0]{};
+ const auto contextAddress=(uintptr_t)context;
+ auto& x=*reinterpret_cast<float*>(haloBase+freelook::liftedInputX);
+ auto& y=*reinterpret_cast<float*>(haloBase+freelook::liftedInputY);
+ x=.2f;y=.1f;
+ keys[VK_F8]=true;
+ onLiftedInput(haloBase,contextAddress);
+ require(x==.2f&&y==.1f&&!active,"uninitialized guest TLS leaves steering intact");
+ put(context,0x2d8,(uintptr_t)testVector);
+ onLiftedInput(haloBase,contextAddress);
+ require(x==0&&y==0&&active,"lifted input consumes both axes while held");
+ onLiftedCamera(contextAddress,0,1,(uintptr_t)&camera);
+ require(memcmp(&camera,&original,sizeof camera)==0,"lifted camera only edits local user zero");
+ onLiftedCamera(contextAddress,0,0,(uintptr_t)&camera);
+ require(memcmp(&camera,&original,sizeof camera)!=0,"lifted camera uses guest TLS to orbit");
+ keys[VK_F8]=false;
+ x=.2f;y=.1f;
+ onLiftedInput(haloBase,contextAddress);
+ clockMs+=1000;
+ onLiftedCamera(contextAddress,0,0,(uintptr_t)&camera);
+ require(x==.2f&&y==.1f&&memcmp(&camera,&original,sizeof camera)==0,"lifted release restores steering and camera");
+ puts("PASS: lifted engine guest TLS, both axes, camera ownership and release");
+ require(freelook::matchRemote(GetCurrentProcess(),(uintptr_t)testLiftedInputSite,freelook::inputEndBytes),"input fixture matches verified lifted instructions");
+ require(freelook::matchRemote(GetCurrentProcess(),(uintptr_t)testLiftedCameraSite,freelook::cameraEndBytes),"camera fixture matches verified lifted instructions");
+ require(MH_Initialize()==MH_OK,"lifted fixture hooks initialized");
+ require(MH_CreateHook((void*)testLiftedInputSite,(void*)liftedInputHook,&liftedInputTrampoline)==MH_OK,"lifted input hook created");
+ require(MH_CreateHook((void*)testLiftedCameraSite,(void*)liftedCameraHook,&liftedCameraTrampoline)==MH_OK,"lifted camera hook created");
+ require(MH_EnableHook(MH_ALL_HOOKS)==MH_OK,"lifted fixture hooks enabled");
+ keys[VK_F8]=true;x=.2f;y=.1f;
+ testLiftedInput(haloBase,contextAddress);
+ require(x==0&&y==0&&active,"lifted assembly extracts image and context from saved registers");
+ require(testLiftedCamera(contextAddress,0,(uintptr_t)&camera)==(uintptr_t)&camera,"lifted camera hook preserves return value");
+ require(memcmp(&camera,&original,sizeof camera)!=0,"lifted assembly extracts user, camera and context");
+ keys[VK_F8]=false;
+ testLiftedInput(haloBase,contextAddress);
+ clockMs+=1000;
+ testLiftedCamera(contextAddress,0,(uintptr_t)&camera);
+ require(memcmp(&camera,&original,sizeof camera)==0,"lifted assembly release restores camera");
+ require(MH_DisableHook(MH_ALL_HOOKS)==MH_OK&&MH_Uninitialize()==MH_OK,"lifted fixture hooks stopped");
+ puts("PASS: actual lifted input/camera assembly hooks, register arguments and return preservation");
 }
