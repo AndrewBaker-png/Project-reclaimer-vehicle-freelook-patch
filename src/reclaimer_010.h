@@ -10,6 +10,8 @@ inline constexpr char reclaimer010Hash[] =
     "8246e8a4a6e90dcd2305ca402a5de3f6b2ab295fc86e3987ac100d8dcd38312e";
 inline constexpr char reclaimer0101Hash[] =
     "d036d1a25516d11a3a164a8ad4b1e3b5681062492e6e0414252e5da71c30e171";
+inline constexpr char reclaimer0102Hash[] =
+    "108fa38f5607ca98af35049df8721784e9c1aa7d4d443e5914cb4f52b2c2e06b";
 
 // Windows x64 machine-code cache for the supported Halo 3 build.
 inline constexpr uintptr_t liftedInput = 0x5a31a0;
@@ -36,9 +38,10 @@ struct LiftedEngine {
     uintptr_t tlsVector = 0;
     uintptr_t host = 0;
     bool update0101 = false;
-    uintptr_t inputHook() const { return host + (update0101 ? 0x30470d5 : nativeInputEnd); }
-    uintptr_t contextKey() const { return host + (update0101 ? 0x4aa4b18 : nativeContextKey); }
-    uintptr_t cameraHook() const { return code + cameraEnd - (update0101 ? 0x20 : 0); }
+    bool update0102 = false;
+    uintptr_t inputHook() const { return host + (update0102 ? 0x37f5e44 : update0101 ? 0x30470d5 : nativeInputEnd); }
+    uintptr_t contextKey() const { return host + (update0102 ? 0x5cc99d8 : update0101 ? 0x4aa4b18 : nativeContextKey); }
+    uintptr_t cameraHook() const { return code + (update0102 ? 0x5b0785 : cameraEnd - (update0101 ? 0x20 : 0)); }
 };
 
 template<class T>
@@ -72,6 +75,31 @@ inline LiftedEngine findLiftedEngine(HANDLE process) {
         if (region.State != MEM_COMMIT || region.Type != MEM_PRIVATE ||
             region.AllocationBase != region.BaseAddress || region.RegionSize < 0x17d0400 ||
             (region.Protect != PAGE_EXECUTE_READWRITE && region.Protect != PAGE_EXECUTE_READ)) continue;
+        // 0.10.2 inlines the fast TLS lookup and uses RBX=context, R12=user.
+        constexpr unsigned char storeX0102[] = {0xc4,0xe3,0x79,0x16,0x8b,0x54,0xa0,0x22,0x02,0x00};
+        constexpr unsigned char storeY0102[] = {0xc4,0xe3,0x79,0x16,0x8b,0x58,0xa0,0x22,0x02,0x00};
+        constexpr unsigned char cameraArgs0102[] = {0x48,0x89,0xf9,0x48,0x33,0xff,0x83,0xfa,0xff,0x49,0x89,0xd4};
+        constexpr unsigned char cameraTls0102[] = {0x48,0x8b,0x83,0xd8,0x02,0x00,0x00,0x48,0x89,0xd9,0x48,0x85,0xc0};
+        if (matchRemote(process, base + 0x5cfec4, storeX0102) &&
+            matchRemote(process, base + 0x5cff35, storeY0102) &&
+            matchRemote(process, base + 0x5b06d2, cameraArgs0102) &&
+            matchRemote(process, base + 0x5b073a, cameraTls0102) &&
+            matchRemote(process, base + 0x5b0719, imageLoad) &&
+            matchRemote(process, base + 0x5b0798, tlsLoad)) {
+            LiftedEngine candidate{base}; candidate.update0102 = true;
+            MEMORY_BASIC_INFORMATION helper{};
+            uint32_t tlsIndex = 0;
+            if (readRemote(process, base + 0x5b071b, candidate.image) && candidate.image &&
+                readRemote(process, base + 0x5b079a, candidate.tlsVector) &&
+                VirtualQueryEx(process, reinterpret_cast<void*>(candidate.tlsVector), &helper, sizeof helper) &&
+                helper.Type == MEM_IMAGE && helper.State == MEM_COMMIT &&
+                matchRemote(process, candidate.tlsVector, tlsEntry) &&
+                readRemote(process, candidate.image + 0xa39f9c, tlsIndex) && tlsIndex <= 1023) {
+                if (found.code) return {};
+                candidate.host = reinterpret_cast<uintptr_t>(helper.AllocationBase);
+                found = candidate;
+            }
+        }
         for (bool updated : {false, true}) {
             const uintptr_t scanBase = base - (updated ? 0x20 : 0);
             if (!matchRemote(process, scanBase + liftedInput + 0x12db, storeX) ||
@@ -108,9 +136,11 @@ inline bool liftedHookSitesMatch(HANDLE process, const LiftedEngine& engine) {
         0x48,0x8b,0x05,0x67,0xbc,0x5a,0x01,0x8b,0x70,0x18
     };
     constexpr unsigned char contextLookup0101[] = {0x48,0x8b,0x05,0xb7,0x22,0x61,0x01,0x8b,0x70,0x18};
+    constexpr unsigned char contextLookup0102[] = {0x48,0x8b,0x05,0x67,0x03,0xff,0x01,0x8b,0x70,0x18};
     return matchRemote(process, engine.inputHook() - sizeof nativeAxisStores, nativeAxisStores) &&
            matchRemote(process, engine.inputHook(), nativeInputEndBytes) &&
-           (engine.update0101 ? matchRemote(process, engine.host + 0x349285a, contextLookup0101) : matchRemote(process, engine.host + 0x338a5aa, contextLookup)) &&
+           (engine.update0102 ? matchRemote(process, engine.host + 0x3cd966a, contextLookup0102) :
+            engine.update0101 ? matchRemote(process, engine.host + 0x349285a, contextLookup0101) : matchRemote(process, engine.host + 0x338a5aa, contextLookup)) &&
            matchRemote(process, engine.cameraHook(), cameraEndBytes);
 }
 }

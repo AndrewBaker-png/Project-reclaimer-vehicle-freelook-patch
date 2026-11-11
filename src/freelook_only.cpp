@@ -19,7 +19,7 @@
 #error Build this isolated runtime with FREELOOK_ONLY.
 #endif
 extern "C" { void inputXHook();void inputYHook();void cameraHook();void cameraResultHook();void* inputXTrampoline=nullptr;void* inputYTrampoline=nullptr;void* cameraTrampoline=nullptr; }
-extern "C" { void liftedInputHook();void liftedCameraHook();void* liftedInputTrampoline=nullptr;void* liftedCameraTrampoline=nullptr; }
+extern "C" { void liftedInputHook();void liftedCameraHook();void liftedCamera0102Hook();void* liftedInputTrampoline=nullptr;void* liftedCameraTrampoline=nullptr; }
 static uintptr_t haloBase=0;
 static freelook::LiftedEngine liftedEngine;
 static SRWLOCK stateLock=SRWLOCK_INIT;
@@ -305,7 +305,7 @@ static DWORD runWorker(){
   };
   const Hook liftedHooks[]={
     {liftedEngine.inputHook(),(void*)liftedInputHook,&liftedInputTrampoline},
-    {liftedEngine.cameraHook(),(void*)liftedCameraHook,&liftedCameraTrampoline}
+    {liftedEngine.cameraHook(),(void*)(liftedEngine.update0102?liftedCamera0102Hook:liftedCameraHook),&liftedCameraTrampoline}
   };
   const Hook* hooks=liftedEngine.code?liftedHooks:legacyHooks;
   const size_t hookCount=liftedEngine.code?2:3;
@@ -318,7 +318,7 @@ static DWORD runWorker(){
     return (uintptr_t)GetModuleHandleW(L"halo3.dll")==haloBase;
   };
   if(liftedEngine.code){
-    if(!freelook::liftedHookSitesMatch(GetCurrentProcess(),liftedEngine)){log("REFUSED: unsupported or modified Reclaimer 0.10.0 hook sites");return 4;}
+    if(!freelook::liftedHookSitesMatch(GetCurrentProcess(),liftedEngine)){log("REFUSED: unsupported or modified Reclaimer 0.10.x hook sites");return 4;}
   }else{
     for(const auto& site:verifiedHookSites)if(!checkBytes(haloBase+site.rva,site.bytes,16)){log("REFUSED: unsupported or modified hook sites");return 4;}
   }

@@ -1,3 +1,9 @@
+## 30.4.8 - Reclaimer 0.10.2
+
+- Retraced native input to 0x37f5e44, context key to 0x5cc99d8, and translated camera to 0x5b0785.
+- Added a camera hook for RBX=context and R12=user, preserving the older versions' register layouts.
+- Exact executable hash and live instruction checks passed. The project maintainer confirmed Freelook 30.4.8 works in-game on Reclaimer 0.10.2.
+
 ## 30.4.7 — Reclaimer 0.10.1
 
 - Retraced native input to client RVA `0x30470d5`, guest-context key to `0x4aa4b18`, and translated camera hook to allocation offset `0x584ede`.

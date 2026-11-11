@@ -29,6 +29,11 @@
 .if \lifted == 2
  mov rcx,[rax+0x68]
  mov rdx,[rax+0x70]
+.elseif \lifted == 3
+ mov rcx,[rax+0x58]
+ mov rdx,[rax+0x10]
+ mov r8,[rax+0x18]
+ mov r9,[rax+0x70]
 .elseif \lifted
  mov rcx,[rax+0x18]
  mov rdx,[rax+0x10]
@@ -65,6 +70,7 @@ MIDHOOK cameraHook, onCamera, cameraTrampoline
 # Pass saved R12, R13, RBX and RAX to the lifted-engine callbacks.
 MIDHOOK liftedInputHook, onLiftedInput, liftedInputTrampoline, 2
 MIDHOOK liftedCameraHook, onLiftedCamera, liftedCameraTrampoline, 1
+MIDHOOK liftedCamera0102Hook, onLiftedCamera, liftedCameraTrampoline, 3
 #endif
 
 # Preserve the original function's private ABI, including volatile registers

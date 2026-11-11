@@ -1,6 +1,6 @@
 {
   "revision": 30,
-  "packageVersion": "30.4.7",
+  "packageVersion": "30.4.8",
   "build": "r30-installer",
   "profile": "F8 freelook only",
   "compiler": {
@@ -36,5 +36,15 @@
     "contextKey": "client image + 0x4aa4b18",
     "cameraHook": "translated allocation + 0x584ede",
     "gameplayValidation": "Live read-only hook probe passed; Freelook 30.4.7 works in-game on Reclaimer 0.10.1, as reported by the project maintainer"
+  },
+  "reclaimer0102": {
+    "version": "0.10.2",
+    "sha256": "108fa38f5607ca98af35049df8721784e9c1aa7d4d443e5914cb4f52b2c2e06b",
+    "source": "https://github.com/ProjectReclaimer/project-reclaimer-releases/releases/tag/v0.10.2",
+    "inputHook": "client image + 0x37f5e44",
+    "contextKey": "client image + 0x5cc99d8",
+    "cameraHook": "translated allocation + 0x5b0785",
+    "cameraAbi": "RBX=context, R12=user, RAX=camera",
+    "gameplayValidation": "Live read-only compatibility probe passed; Freelook 30.4.8 works in-game on Reclaimer 0.10.2, as reported by the project maintainer"
   }
 }

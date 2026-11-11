@@ -1,6 +1,6 @@
 # Project Reclaimer Vehicle Freelook Patch
 
-Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. **Freelook 30.4.7** supports **Project Reclaimer v0.10.1** on Windows x64. The project maintainer confirmed that Freelook works in-game on this Reclaimer version. The **0.10.0** and legacy **0.9.23** paths are also supported.
+Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. **Freelook 30.4.8** supports **Project Reclaimer v0.10.2** on Windows x64. The project maintainer confirmed that Freelook works in-game on this Reclaimer version. The **0.10.1**, **0.10.0**, and legacy **0.9.23** paths are also supported.
 
 The project maintainer reports freelook working in both **ground and aerial vehicles**. It is intended for vehicle freelook generally, but every ground/aerial vehicle and seat has not been tested; universal compatibility remains unverified.
 
@@ -8,7 +8,7 @@ The project maintainer also reported successful live **Huge Grass** multiplayer 
 
 ## Download and install
 
-1. Download the [Freelook 30.4.7 installer ZIP](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/download/r30-installer-30.4.7/Halo3-Freelook-Only-MP-r30-installer.zip) for Project Reclaimer v0.10.1 on Windows x64 and verify it against the [SHA-256 checksum](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/download/r30-installer-30.4.7/SHA256SUMS-r30-installer.txt).
+1. Download the [Freelook 30.4.8 installer ZIP](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/download/r30-installer-30.4.8/Halo3-Freelook-Only-MP-r30-installer.zip) for Project Reclaimer v0.10.2 on Windows x64 and verify it against the [SHA-256 checksum](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/download/r30-installer-30.4.8/SHA256SUMS-r30-installer.txt).
 2. Fully close Reclaimer. Extract the ZIP to a **separate folder**, such as `C:\Mods\Freelook-Setup`. Do not extract updates over an installed copy.
 3. Double-click **`Setup-Freelook.exe`**. Accept the detected installation to update, select an older portable mod folder manually, or choose a new writable destination. Review the installed/incoming versions and replacement count, then confirm.
 4. Double-click **`Play-Reclaimer-with-Freelook.exe` in the installed destination**. On first use, choose your Project Reclaimer client EXE. The launcher remembers it and starts the loader followed by the game on later launches. No commands need to be typed.
@@ -37,7 +37,7 @@ The loader is session-only. It does not install a service or startup entry; use 
 
 ## Install, update, and uninstall
 
-The [Freelook 30.4.7 prerelease](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer-30.4.7) includes setup, update/repair, launch, and uninstall helpers.
+The [Freelook 30.4.8 prerelease](https://github.com/AndrewBaker-png/Project-reclaimer-vehicle-freelook-patch/releases/tag/r30-installer-30.4.8) includes setup, update/repair, launch, and uninstall helpers.
 
 1. Fully close Reclaimer. Extract the new ZIP to a **separate folder**, not over your installed copy.
 2. Double-click **`Setup-Freelook.exe`** in the newly extracted folder. It detects registered installations. For an older portable copy, choose its existing mod folder manually. For a new installation, accept the default folder or select another writable destination.
@@ -55,9 +55,9 @@ For an older portable package without uninstall support, stop the loader, close 
 
 ## Compatibility and limitations
 
-- The loader checks the exact supported Reclaimer executable and live hook sites. Versions 0.10.0 and 0.10.1 hook native mouse input and the translated camera. The legacy path checks the Halo 3 DLL hash and three hook sites.
+- The loader checks the exact supported Reclaimer executable and live hook sites. Versions 0.10.0, 0.10.1, and 0.10.2 hook native mouse input and the translated camera. The legacy path checks the Halo 3 DLL hash and three hook sites.
 - Revision 30 retains the native third-person vehicle view. Cockpit models, visor/HUD overlays, F7/F9 controls, graphics hooks, and custom map assets are outside this build.
-- MCC support exists in the underlying launcher but has not been flight-tested for this revision. This package targets Halo 3 vehicles in Reclaimer 0.9.23, 0.10.0, and 0.10.1.
+- MCC support exists in the underlying launcher but has not been flight-tested for this revision. This package targets Halo 3 vehicles in Reclaimer 0.9.23, 0.10.0, 0.10.1, and 0.10.2.
 - Live multiplayer testing covers Huge Grass on the supported Reclaimer build. This does not establish compatibility with every map, server configuration, vehicle, or seat. Follow the server's mod rules and supported anti-cheat settings.
 
 `loader-state.json` records loader status. `loader.log` records compatibility and load checks; `freelook.log` records DLL activation. If loading is refused, check these files and the supported version before restarting.

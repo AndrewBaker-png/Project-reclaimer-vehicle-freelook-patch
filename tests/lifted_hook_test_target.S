@@ -32,3 +32,22 @@ testLiftedCameraSite:
  mov rsp,rbp
  pop rbp
  ret
+
+.global testLiftedCamera0102
+testLiftedCamera0102:
+ push rbp
+ mov rbp,rsp
+ sub rsp,0x30
+ mov [rsp+0x20],rbx
+ mov [rsp+0x28],r12
+ mov rbx,rcx
+ mov r12d,edx
+ mov rax,r8
+.global testLiftedCamera0102Site
+testLiftedCamera0102Site:
+ mov rbx,[rsp+0x20]
+ mov r12,[rsp+0x28]
+ add rsp,0x30
+ mov rsp,rbp
+ pop rbp
+ ret
