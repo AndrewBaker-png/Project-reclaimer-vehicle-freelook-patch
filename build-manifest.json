@@ -46,5 +46,6 @@
     "cameraHook": "translated allocation + 0x5b0785",
     "cameraAbi": "RBX=context, R12=user, RAX=camera",
     "gameplayValidation": "Live read-only compatibility probe passed; Freelook 30.4.8 works in-game on Reclaimer 0.10.2, as reported by the project maintainer"
-  }
+  },
+  "multiplayerWarning": "Multiplayer warning (2026-11-11): a session using Freelook 30.4.8 on Reclaimer 0.10.2 was kicked for sending game data that a normal game never sends. Freelook may be the cause, but causation and cheating detection are unconfirmed. Avoid public-server use pending investigation."
 }

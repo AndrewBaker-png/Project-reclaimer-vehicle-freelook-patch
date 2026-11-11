@@ -1,5 +1,7 @@
 Project Reclaimer Vehicle Freelook Patch - Installer package 30.4.8
 
+Multiplayer warning — November 11, 2026: A multiplayer session using Freelook 30.4.8 on Reclaimer 0.10.2 ended with the host message: "sent game data that a normal game never sends". Freelook may have caused the kick, but this has not been confirmed. The client log does not identify the rejected data or name Freelook. The mod changes engine camera and input state; unusually large camera offsets could plausibly produce data that server validation considers invalid or suspicious, but that explanation is unverified. This is not confirmation of cheating detection, tracking, or a ban. Passing hook tests and working in-game do not establish multiplayer compatibility. Avoid public-server use pending investigation; any reproduction should be limited to a private server with its owner's permission.
+
 Adds Windows x64 support for Project Reclaimer 0.10.2, including its changed
 camera register layout. Reclaimer 0.10.1, 0.10.0, and legacy 0.9.23 remain supported.
 The loader verifies the exact client SHA-256 and live input/camera hook sites.

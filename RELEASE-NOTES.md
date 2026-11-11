@@ -1,5 +1,7 @@
 ## 30.4.8 - Reclaimer 0.10.2
 
+> **Multiplayer warning — November 11, 2026:** A multiplayer session using Freelook 30.4.8 on Reclaimer 0.10.2 ended with the host message: "sent game data that a normal game never sends". **Freelook may have caused the kick, but this has not been confirmed.** The client log does not identify the rejected data or name Freelook. The mod changes engine camera and input state; unusually large camera offsets could plausibly produce data that server validation considers invalid or suspicious, but that explanation is unverified. This is not confirmation of cheating detection, tracking, or a ban. Passing hook tests and working in-game do not establish multiplayer compatibility. Avoid public-server use pending investigation; any reproduction should be limited to a private server with its owner's permission.
+
 - Retraced native input to 0x37f5e44, context key to 0x5cc99d8, and translated camera to 0x5b0785.
 - Added a camera hook for RBX=context and R12=user, preserving the older versions' register layouts.
 - Exact executable hash and live instruction checks passed. The project maintainer confirmed Freelook 30.4.8 works in-game on Reclaimer 0.10.2.

@@ -1,5 +1,7 @@
 # Project Reclaimer Vehicle Freelook Patch
 
+> **Multiplayer warning — November 11, 2026:** A multiplayer session using Freelook 30.4.8 on Reclaimer 0.10.2 ended with the host message: "sent game data that a normal game never sends". **Freelook may have caused the kick, but this has not been confirmed.** The client log does not identify the rejected data or name Freelook. The mod changes engine camera and input state; unusually large camera offsets could plausibly produce data that server validation considers invalid or suspicious, but that explanation is unverified. This is not confirmation of cheating detection, tracking, or a ban. Passing hook tests and working in-game do not establish multiplayer compatibility. Avoid public-server use pending investigation; any reproduction should be limited to a private server with its owner's permission.
+
 Hold **F8** in a Halo 3 vehicle to look around independently of the native camera. Release F8 to recenter. **Freelook 30.4.8** supports **Project Reclaimer v0.10.2** on Windows x64. The project maintainer confirmed that Freelook works in-game on this Reclaimer version. The **0.10.1**, **0.10.0**, and legacy **0.9.23** paths are also supported.
 
 The project maintainer reports freelook working in both **ground and aerial vehicles**. It is intended for vehicle freelook generally, but every ground/aerial vehicle and seat has not been tested; universal compatibility remains unverified.
