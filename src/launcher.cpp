@@ -27,7 +27,7 @@ static bool isReclaimerEngine(const PROCESSENTRY32W& entry){
 #ifdef FREELOOK_ONLY
  HANDLE process=OpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ,FALSE,entry.th32ProcessID);
  if(!process)return false;
- auto engine=freelook::findLiftedEngine(process);
+ auto engine=freelook::findLiftedEngine(process,module(entry.th32ProcessID,entry.szExeFile));
  CloseHandle(process);
  return engine.code!=0;
 #else
@@ -82,13 +82,16 @@ int wmain(int argc,wchar_t** argv){
  bool lifted=false;
 #ifdef FREELOOK_ONLY
  if(reclaimerMode&&!module(pid,L"halo3.dll")){
+   const bool updated0108=hashFile(gamePath,freelook::reclaimer0108Hash);
+   const bool updated0104=hashFile(gamePath,freelook::reclaimer0104Hash);
+   const bool updated0103=hashFile(gamePath,freelook::reclaimer0103Hash);
    const bool updated0102=hashFile(gamePath,freelook::reclaimer0102Hash);
    const bool updated=hashFile(gamePath,freelook::reclaimer0101Hash);
-   if(!updated0102&&!updated&&!hashFile(gamePath,freelook::reclaimer010Hash)){puts("Refused: client executable differs from the verified Reclaimer 0.10.0/0.10.1/0.10.2 builds.");CloseHandle(process);return 6;}
-   const auto engine=freelook::findLiftedEngine(process);
+   if(!updated0108&&!updated0104&&!updated0103&&!updated0102&&!updated&&!hashFile(gamePath,freelook::reclaimer010Hash)){puts("Refused: client executable differs from the verified Reclaimer 0.10.0/0.10.1/0.10.2/0.10.3/0.10.4/0.10.8 builds.");CloseHandle(process);return 6;}
+   const auto engine=freelook::findLiftedEngine(process,module(pid,wcsrchr(gamePath,L'\\')+1));
    if(!engine.code){puts("Waiting for the verified Reclaimer 0.10.x engine.");CloseHandle(process);return 1;}
-   if(engine.update0102!=updated0102||engine.update0101!=updated||!freelook::liftedHookSitesMatch(process,engine)){puts("Refused: Reclaimer 0.10.x live input or camera hook site differs.");CloseHandle(process);return 17;}
-   printf("Verified Reclaimer %s PID %lu, exact client SHA256, native input bridge and translated camera hook sites.\n",updated0102?"0.10.2":updated?"0.10.1":"0.10.0",pid);
+   if(engine.update0108!=updated0108||engine.update0104!=updated0104||engine.update0103!=updated0103||engine.update0102!=(updated0102||updated0103||updated0104)||engine.update0101!=updated||!freelook::liftedHookSitesMatch(process,engine)){puts("Refused: Reclaimer 0.10.x live input or camera hook site differs.");CloseHandle(process);return 17;}
+   printf("Verified Reclaimer %s PID %lu, exact client SHA256, native input bridge and %s camera hook sites.\n",updated0108?"0.10.8":updated0104?"0.10.4":updated0103?"0.10.3":updated0102?"0.10.2":updated?"0.10.1":"0.10.0",pid,engine.renderOutputOnly()?"render-output-only":"translated");
    lifted=true;
  }
 #endif
@@ -135,7 +138,7 @@ int wmain(int argc,wchar_t** argv){
  }
 #endif
 #ifdef FREELOOK_ONLY
- printf("Freelook-only MP test build loaded: %s input/camera hooks. Hold F8 in a vehicle; release to recenter.\nCheck freelook.log. Stop with this launcher --stop or Ctrl+Shift+F10.\n",lifted?"two lifted":"three");
+ printf("Freelook-only MP test build loaded: %s input/camera hooks. Hold your freelook binding (default F8) in a vehicle; release to recenter.\nCheck freelook.log. Stop with this launcher --stop or Ctrl+Shift+F10.\n",lifted?"two lifted":"three");
 #else
  puts("Prototype loaded. Check freelook.log and visor-hud.log for status. Hold F8 while in a Halo 3 vehicle.\nStop with this launcher --stop, or Ctrl+Shift+F10. Game files remain unchanged.");
 #endif

@@ -1,7 +1,7 @@
 {
   "revision": 30,
-  "packageVersion": "30.4.8",
-  "build": "r30-installer",
+  "packageVersion": "30.7.1",
+  "build": "r30-0108-test",
   "profile": "F8 freelook only",
   "compiler": {
     "version": "Zig 0.14.1",
@@ -25,7 +25,7 @@
     "cameraHook": "translated allocation + 0x584efe",
     "gameplayValidation": "Freelook 30.4.6 on main works in-game, as reported by the project maintainer"
   },
-  "multiplayer": "Latest builds tested successfully in live Huge Grass multiplayer matches on Reclaimer 0.9.23, as reported by the project maintainer; broader coverage not yet documented",
+  "multiplayer": "0.10.8 multiplayer untested.",
   "sourceRevision": "073ff42",
   "sourceNote": "Freelook-only files originally extracted from the local Halo3-Vehicle-Freelook working repository; the current standalone source includes the r30 audit fixes, combined launcher, and versioned installer/updater/uninstaller.",
   "reclaimer0101": {
@@ -47,5 +47,33 @@
     "cameraAbi": "RBX=context, R12=user, RAX=camera",
     "gameplayValidation": "Live read-only compatibility probe passed; Freelook 30.4.8 works in-game on Reclaimer 0.10.2, as reported by the project maintainer"
   },
-  "multiplayerWarning": "Multiplayer warning (2026-11-11): a session using Freelook 30.4.8 on Reclaimer 0.10.2 was kicked for sending game data that a normal game never sends. Freelook may be the cause, but causation and cheating detection are unconfirmed. Avoid public-server use pending investigation."
+  "multiplayerWarning": "Multiplayer warning (2026-11-11): a session using Freelook 30.4.8 on Reclaimer 0.10.2 was kicked for sending game data that a normal game never sends. Freelook may be the cause, but causation and cheating detection are unconfirmed. Avoid public-server use pending investigation.",
+  "reclaimer0103": {
+    "version": "0.10.3",
+    "sha256": "7aa1c6c5705cb15b97bce26a6198cab6c7c1ded9c80084b8548d222e0dd1548f",
+    "inputHook": "client + 0x3c303a4",
+    "contextKey": "client + 0x623ed40",
+    "cameraHook": "client render bridge + 0x3f2d9d0",
+    "engineAnchor": "translated camera epilogue + 0x5b1225",
+    "validation": "Read-only live probe passed; gameplay pending"
+  },
+  "reclaimer0104": {
+    "version": "0.10.4",
+    "sha256": "2197a2f2933177abbe1d7a77a007164a703835ce0e2d098b568875d015fd190c",
+    "source": "https://github.com/ProjectReclaimer/project-reclaimer-releases/releases/tag/v0.10.4",
+    "inputHook": "client + 0x3d2242c",
+    "contextKey": "client + 0x63c1c88",
+    "cameraHook": "client render bridge + 0x40763c0",
+    "engineAnchor": "translated camera epilogue + 0x5b1425",
+    "validation": "Native input/render fixture tests and live isolated Hugegrass load/stop passed; F8 gameplay and private multiplayer pending"
+  },
+  "reclaimer0108": {
+    "version": "0.10.8",
+    "sha256": "547fa26921fbe22d5279e41a18eb91b5825f744593d08d50736eac476a901582",
+    "source": "https://github.com/ProjectReclaimer/project-reclaimer-releases/releases/tag/v0.10.8",
+    "inputHook": "client + 0x5671a8e",
+    "cameraHook": "client + 0x4b5fb60",
+    "guestImage": "client + 0x8923000",
+    "context": "static host TLS block + 0xbd18"
+  }
 }

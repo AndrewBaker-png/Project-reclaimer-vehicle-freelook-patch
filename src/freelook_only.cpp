@@ -48,6 +48,7 @@ static FILE* logFile=nullptr;
 static HMODULE selfModule=nullptr;
 static LONG enabled=0;
 static LONG64 mouseFrames=0,cameraFrames=0,activeFrames=0;
+static LONG64 renderObserverMatches=0;
 // These references are resolved from the current engine thread's TLS during its
 // own callback, not from guessed process-wide addresses. Engine ownership keeps
 // the snapshot alive until the callback returns. Never query process memory here.
@@ -122,6 +123,17 @@ static bool eligible(uint32_t& vehicle,uintptr_t context){
   return localVehicle(vehicle,context);
 }
 static void reset(){if(active){char message[220];snprintf(message,sizeof message,"released yaw=%g pitch=%g nonzeroX=%lld nonzeroY=%lld maxX=%g maxY=%g",look.yaw,look.pitch,nonzeroX,nonzeroY,maxX,maxY);log(message);returnFrom=displayed;returnAt=GetTickCount64();returning=true;}active=false;}
+// Only the worker changes the binding. Input and camera callbacks use the same lock.
+static void refreshBinding(const wchar_t* ini){
+  const int key=GetPrivateProfileIntW(L"Freelook",L"HoldVirtualKey",0,ini);
+  if(key<1||key>254||key=='V'||(reclaimer&&key=='B')||key==holdKey)return;
+  AcquireSRWLockExclusive(&stateLock);
+  reset();
+  holdKey=key;
+  lockout=down(key);
+  ReleaseSRWLockExclusive(&stateLock);
+  char message[64];snprintf(message,sizeof message,"hold binding changed to %d",key);log(message);
+}
 static bool beginInput(uintptr_t context){
   if(!down(holdKey))lockout=false;
   uint32_t vehicle;
@@ -151,6 +163,15 @@ static void onAxis(void* savedFx,bool horizontal){
 extern "C" void onInputX(void* savedFx){onAxis(savedFx,true);}
 extern "C" void onInputY(void* savedFx){onAxis(savedFx,false);}
 static uintptr_t currentGuestContext(){
+  if(liftedEngine.update0108){
+    uint32_t index=0;
+    uintptr_t block=0,context=0;
+    const uintptr_t vector=__readgsqword(0x58);
+    if(!vector||!engineRead(liftedEngine.host+0xda53148,index)||
+       !engineRead(vector+uintptr_t(index)*8,block)||!block||
+       !engineRead(block+0xbd18,context))return 0;
+    return context;
+  }
   uintptr_t key=0,context=0;
   DWORD indexPlusOne=0;
   if(!engineRead(liftedEngine.contextKey(),key)||!key||
@@ -275,6 +296,66 @@ extern "C" void onLiftedCamera(uintptr_t context,uintptr_t,int user,uintptr_t ca
   if(user==0)applyCamera(camera,context);
 }
 
+// 0.10.3/0.10.4: modify only render_camera_build's output, after the native bridge
+// finishes interpolation/FOV work. The observer result remains engine-owned.
+// Render camera layout: position +0, forward +0xc, up +0x18; preserve all
+// remaining fields, including the projection parameters at +0x28/+0x2c.
+static bool applyRenderCamera(uintptr_t output,uintptr_t source,uintptr_t context){
+  InterlockedIncrement64(&cameraFrames);
+  if(!output||!source||!context)return false;
+  AcquireSRWLockExclusive(&stateLock);
+  const auto finish=[](bool result){ReleaseSRWLockExclusive(&stateLock);return result;};
+  if(!InterlockedCompareExchange(&enabled,0,0))return finish(false);
+  uintptr_t observer=tlsSlot(0x578,context);
+  // Restrict to the primary user's observer. Never write anywhere inside any
+  // of the four observer records, even if a future caller aliases its output.
+  if(!observer||source!=observer+0x11c||output>UINTPTR_MAX-36||
+     observer>UINTPTR_MAX-4*0x3d0||
+     (output<observer+4*0x3d0&&output+36>observer))return finish(false);
+  InterlockedIncrement64(&renderObserverMatches);
+  if(!active&&!returning&&!down(holdKey))return finish(false);
+  uint32_t vehicle=0xffffffff;
+  if(!foregroundGame()||!localVehicle(vehicle,context)||vehicle!=heldVehicle){
+    active=false;returning=false;look={};displayed={};heldVehicle=0xffffffff;
+    return finish(false);
+  }
+  if(!down(holdKey))lockout=false;
+  bool held=eligible(vehicle,context)&&active&&vehicle==heldVehicle;
+  if(!held)reset();
+  const auto now=GetTickCount64();
+  if(returning){
+    float t=freelook::clamp((now-returnAt)/(returnSeconds*1000.f),0.f,1.f);
+    float remaining=1.f-t*t*(3.f-2.f*t);
+    displayed={returnFrom.yaw*remaining,returnFrom.pitch*remaining};
+    if(t>=1){returning=false;displayed={};look={};}
+  }else if(held){
+    float dt=displayAt?(now-displayAt)/1000.f:0.f;displayAt=now;
+    displayed=freelook::smooth(displayed,look,dt,smoothingSeconds);
+  }
+  if(!held&&!returning)return finish(false);
+  struct Pose{freelook::Vec3 position,forward,up;} pose;
+  freelook::Vec3 pivot;
+  if(!engineRead(output,pose)||!engineRead(observer+0x1c,pivot))return finish(false);
+  const auto finite=[](freelook::Vec3 v){return std::isfinite(v.x)&&std::isfinite(v.y)&&std::isfinite(v.z);};
+  if(!finite(pose.position)||!finite(pose.forward)||!finite(pose.up)||!finite(pivot)||
+     std::fabs(freelook::dot(pose.forward,pose.forward)-1.f)>.2f||
+     std::fabs(freelook::dot(pose.up,pose.up)-1.f)>.2f||
+     std::fabs(freelook::dot(pose.forward,pose.up))>.05f)return finish(false);
+  Pose transformed;
+  transformed.position=freelook::orbit(pose.position,pivot,pose.forward,pose.up,displayed);
+  freelook::orient(pose.forward,pose.up,displayed,transformed.forward,transformed.up);
+  if(!finite(transformed.position)||!finite(transformed.forward)||!finite(transformed.up))return finish(false);
+  if(!freelook::safeStore((void*)output,&transformed,sizeof transformed))return finish(false);
+  InterlockedIncrement64(&cameraWrites);
+  return finish(true);
+}
+extern "C" void onRenderCamera(uintptr_t context){
+  uintptr_t output=0,source=0;
+  engineRead(context+8,output);engineRead(context+0x10,source);
+  reinterpret_cast<void(*)(uintptr_t)>(liftedCameraTrampoline)(context);
+  applyRenderCamera(output,source,context);
+}
+
 static bool checkBytes(uintptr_t address,const unsigned char* expected,size_t size){unsigned char bytes[32];return size<=sizeof bytes&&ReadProcessMemory(GetCurrentProcess(),(void*)address,bytes,size,nullptr)&&memcmp(bytes,expected,size)==0;}
 static DWORD runWorker(){
   QueryPerformanceFrequency(&perfFrequency);
@@ -283,7 +364,7 @@ static DWORD runWorker(){
   wchar_t ini[MAX_PATH],logPath[MAX_PATH];swprintf(ini,MAX_PATH,L"%lsfreelook.ini",path);swprintf(logPath,MAX_PATH,L"%lsfreelook.log",path);
   logFile=_wfsopen(logPath,L"a",_SH_DENYNO);log("freelook-only MP test revision 30 (audit fixes) starting");
   const bool legacyReclaimer=wcsstr(GetCommandLineW(),L"probe-engine-worker")!=nullptr;
-  if(!legacyReclaimer&&!GetModuleHandleW(L"halo3.dll"))liftedEngine=freelook::findLiftedEngine(GetCurrentProcess());
+  if(!legacyReclaimer&&!GetModuleHandleW(L"halo3.dll"))liftedEngine=freelook::findLiftedEngine(GetCurrentProcess(),(uintptr_t)GetModuleHandleW(nullptr));
   reclaimer=legacyReclaimer||liftedEngine.code;
   if(legacyReclaimer){HANDLE snapshot=CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);PROCESSENTRY32W pe={sizeof pe};if(Process32FirstW(snapshot,&pe))do{if(pe.th32ProcessID==GetCurrentProcessId()){uiParent=pe.th32ParentProcessID;break;}}while(Process32NextW(snapshot,&pe));CloseHandle(snapshot);}
   if(!reclaimer&&!wcsstr(GetCommandLineW(),L"-no-eac")&&!wcsstr(GetCommandLineW(),L"-eac-nop-loaded")){log("REFUSED: use MCC Anti-Cheat Disabled launch option");return 1;}
@@ -305,7 +386,7 @@ static DWORD runWorker(){
   };
   const Hook liftedHooks[]={
     {liftedEngine.inputHook(),(void*)liftedInputHook,&liftedInputTrampoline},
-    {liftedEngine.cameraHook(),(void*)(liftedEngine.update0102?liftedCamera0102Hook:liftedCameraHook),&liftedCameraTrampoline}
+    {liftedEngine.cameraHook(),liftedEngine.renderOutputOnly()?(void*)onRenderCamera:liftedEngine.update0102?(void*)liftedCamera0102Hook:(void*)liftedCameraHook,&liftedCameraTrampoline}
   };
   const Hook* hooks=liftedEngine.code?liftedHooks:legacyHooks;
   const size_t hookCount=liftedEngine.code?2:3;
@@ -329,12 +410,14 @@ static DWORD runWorker(){
   for(size_t i=0;i<hookCount;i++)MH_QueueEnableHook((void*)hooks[i].address);
   hooksMayBeEnabled=true;
   if(MH_ApplyQueued()!=MH_OK){InterlockedExchange(&enabled,0);hooksMayBeEnabled=MH_DisableHook(MH_ALL_HOOKS)!=MH_OK;log("hook activation failed");return 7;}
-  log(liftedEngine.code?"ACTIVE: Reclaimer 0.10.0 native input and translated camera hooks; F8 orbit only":"ACTIVE: exactly 3 input/camera hooks; F8 orbit only; no F7/F9 controls, cockpit, visor, HUD, graphics hooks or asset loading");
-  ULONGLONG lastStatus=GetTickCount64();
+  log(liftedEngine.update0108?"ACTIVE: Reclaimer 0.10.8 native input and render-output-only camera":liftedEngine.update0104?"ACTIVE: Reclaimer 0.10.4 native input and render-output-only camera; shared observer unchanged":liftedEngine.update0103?"ACTIVE: Reclaimer 0.10.3 native input and render-output-only camera; shared observer unchanged":liftedEngine.code?"ACTIVE: Reclaimer 0.10.0-0.10.2 native input and translated camera hooks; F8 orbit only":"ACTIVE: exactly 3 input/camera hooks; F8 orbit only; no F7/F9 controls, cockpit, visor, HUD, graphics hooks or asset loading");
+  ULONGLONG lastStatus=GetTickCount64(),lastBindingCheck=lastStatus;
   while(WaitForSingleObject(stopEvent,33)==WAIT_TIMEOUT){
     if(!enginePresent())break;
     if(down(VK_F10)&&down(VK_CONTROL)&&down(VK_SHIFT))break;
-    auto now=GetTickCount64();if(now-lastStatus>=5000){lastStatus=now;char text[300];snprintf(text,sizeof text,"input=%lld camera=%lld diverted=%lld f8checks=%lld cameraWrites=%lld deny=%ld",mouseFrames,cameraFrames,activeFrames,heldChecks,cameraWrites,denyReason);log(text);}
+    auto now=GetTickCount64();
+    if(now-lastBindingCheck>=500){lastBindingCheck=now;refreshBinding(ini);}
+    if(now-lastStatus>=5000){lastStatus=now;char text[300];snprintf(text,sizeof text,"input=%lld camera=%lld diverted=%lld f8checks=%lld cameraWrites=%lld renderObserverMatches=%lld deny=%ld",mouseFrames,cameraFrames,activeFrames,heldChecks,cameraWrites,renderObserverMatches,denyReason);log(text);}
   }
   InterlockedExchange(&enabled,0);
   // Retain trampolines/module until process exit: native callbacks can be in flight.

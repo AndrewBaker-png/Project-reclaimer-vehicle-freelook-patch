@@ -4,6 +4,7 @@ $ErrorActionPreference='Stop'
 
 # Fixed filenames only. The downloaded manifest never supplies deletion paths.
 $script:PackageFiles=@(
+  'Configure-Freelook.exe',
   'Play-Reclaimer-with-Freelook.exe','Halo3Freelook.exe','Halo3VehicleFreelook-only-mp-r30.dll',
   'freelook.ini','README.txt','Start-Reclaimer-Freelook-Only.ps1','Start-Reclaimer-Freelook-Only.cmd',
   'Stop-Reclaimer-Freelook-Only.cmd','MINHOOK-LICENSE.txt','HCM-LICENSE.txt',
