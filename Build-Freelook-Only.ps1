@@ -17,6 +17,7 @@ try {
     @{Name='hook_tests';Sources=@('tests/hook_tests.cpp','tests/hook_test_target.S','src/hooks.S')+$minhook},
     @{Name='camera_copy_tests';Sources=@('tests/camera_copy_tests.cpp')},
     @{Name='freelook_only_tests';Sources=@('-DFREELOOK_LIFTED_HOOKS','tests/freelook_only_tests.cpp','tests/lifted_hook_test_target.S','src/hooks.S')+$minhook},
+    @{Name='render_only_tests';Sources=@('-DFREELOOK_LIFTED_HOOKS','tests/render_only_tests.cpp','tests/lifted_hook_test_target.S','src/hooks.S')+$minhook},
     @{Name='module_path_tests';Sources=@('tests/module_path_tests.cpp')},
     @{Name='runtime_control_tests';Sources=@('tests/runtime_control_tests.cpp')}
   )
@@ -26,6 +27,12 @@ try {
     if($LASTEXITCODE){throw ($test.Name+' build failed')}
     & $exe
     if($LASTEXITCODE){throw ($test.Name+' failed')}
+    if($test.Name -eq 'render_only_tests'){
+      & $exe --0108
+      if($LASTEXITCODE){throw '0.10.8 input/render detour tests failed'}
+      & $exe --0104
+      if($LASTEXITCODE){throw '0.10.4 input/render detour tests failed'}
+    }
   }
   & $zig c++ @common '-DFREELOOK_LIFTED_HOOKS' '-shared' 'src/freelook_only.cpp' 'src/hooks.S' @minhook '-luser32' '-o' (Join-Path $build 'Halo3VehicleFreelook-only-mp-r30.dll')
   if($LASTEXITCODE){throw 'Freelook-only runtime build failed'}
@@ -33,6 +40,8 @@ try {
   if($LASTEXITCODE){throw 'Freelook-only launcher build failed'}
   & $zig c++ @common 'src/play_reclaimer.cpp' '-municode' '-Wl,--subsystem,windows' '-lcomdlg32' '-luser32' '-o' (Join-Path $build 'Play-Reclaimer-with-Freelook.exe')
   if($LASTEXITCODE){throw 'Combined Reclaimer launcher build failed'}
+  & $zig c++ @common 'src/configure_freelook.cpp' '-municode' '-Wl,--subsystem,windows' '-luser32' '-o' (Join-Path $build 'Configure-Freelook.exe')
+  if($LASTEXITCODE){throw 'Freelook controls build failed'}
   foreach($action in @('Setup','Uninstall')){
     [string[]]$defines=if($action -eq 'Uninstall'){@('-DFREELOOK_UNINSTALL')}else{@()}
     & $zig c++ @common @defines 'src/maintenance.cpp' '-municode' '-Wl,--subsystem,windows' '-luser32' '-o' (Join-Path $build ($action+'-Freelook.exe'))
@@ -45,13 +54,19 @@ try {
     if($LASTEXITCODE){throw ($name+' build failed')}
   }
   $powershell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-  & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tests\play_launcher_tests.ps1') -BuildDirectory $build
+  # Installer fixtures must be on a regular local path: OneDrive source roots
+  # are reparse points, correctly refused by the production installer.
+  $fixtureBuild=Join-Path ([IO.Path]::GetTempPath()) ('freelook-tests-'+[Guid]::NewGuid().ToString('N'))
+  New-Item -ItemType Directory -Path $fixtureBuild | Out-Null
+  foreach($fixture in @('Play-Reclaimer-with-Freelook.exe','play_client_fixture.exe','loader_test_launcher.exe')){Copy-Item -LiteralPath (Join-Path $build $fixture) -Destination $fixtureBuild}
+  Write-Output ('Isolated installer test fixtures: '+$fixtureBuild)
+  & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tests\play_launcher_tests.ps1') -BuildDirectory $fixtureBuild
   if($LASTEXITCODE){throw 'Combined Reclaimer launcher tests failed'}
-  & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tests\uninstall_tests.ps1') -BuildDirectory $build
+  & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tests\uninstall_tests.ps1') -BuildDirectory $fixtureBuild
   if($LASTEXITCODE){throw 'Uninstaller regression tests failed'}
-  & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tests\update_tests.ps1') -BuildDirectory $build
+  & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tests\update_tests.ps1') -BuildDirectory $fixtureBuild
   if($LASTEXITCODE){throw 'Installer update/rollback tests failed'}
-  & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tests\loader_tests.ps1') -FixtureExecutable (Join-Path $build 'loader_test_launcher.exe') -WorkDirectory (Join-Path $build 'loader-test-runs')
+  & $powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tests\loader_tests.ps1') -FixtureExecutable (Join-Path $fixtureBuild 'loader_test_launcher.exe') -WorkDirectory (Join-Path $fixtureBuild 'loader-test-runs')
   if($LASTEXITCODE){throw 'Loader lifecycle regression tests failed'}
   $lifecycle=Join-Path $build ('runtime-test-'+[Guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $lifecycle | Out-Null
@@ -66,14 +81,14 @@ try {
   Copy-Item -LiteralPath 'Freelook-Only-MP-README.txt' -Destination (Join-Path $build 'README.txt') -Force
   foreach($name in @('MINHOOK-LICENSE.txt','HCM-LICENSE.txt')){Copy-Item -LiteralPath $name -Destination $build -Force}
   foreach($name in @('Start-Reclaimer-Freelook-Only.ps1','Start-Reclaimer-Freelook-Only.cmd','Stop-Reclaimer-Freelook-Only.cmd','Manage-Freelook.ps1','Add-Freelook-Defender-Exclusion.ps1')){Copy-Item -LiteralPath $name -Destination $build -Force}
-  $files=@('Play-Reclaimer-with-Freelook.exe','Halo3Freelook.exe','Halo3VehicleFreelook-only-mp-r30.dll','freelook.ini','README.txt','Start-Reclaimer-Freelook-Only.ps1','Start-Reclaimer-Freelook-Only.cmd','Stop-Reclaimer-Freelook-Only.cmd','MINHOOK-LICENSE.txt','HCM-LICENSE.txt','Setup-Freelook.exe','Uninstall-Freelook.exe','Manage-Freelook.ps1','Add-Freelook-Defender-Exclusion.ps1')
+  $files=@('Configure-Freelook.exe','Play-Reclaimer-with-Freelook.exe','Halo3Freelook.exe','Halo3VehicleFreelook-only-mp-r30.dll','freelook.ini','README.txt','Start-Reclaimer-Freelook-Only.ps1','Start-Reclaimer-Freelook-Only.cmd','Stop-Reclaimer-Freelook-Only.cmd','MINHOOK-LICENSE.txt','HCM-LICENSE.txt','Setup-Freelook.exe','Uninstall-Freelook.exe','Manage-Freelook.ps1','Add-Freelook-Defender-Exclusion.ps1')
   $hashes=[ordered]@{}
   foreach($name in $files){$hashes[$name]=(Get-FileHash (Join-Path $build $name) -Algorithm SHA256).Hash}
-  $manifest=[ordered]@{revision=30;packageVersion='30.4.8';build='r30-installer';profile='F8 freelook only';hooks=@('legacy input X 0x187b89','legacy input Y 0x187bb2','legacy camera 0x17eb20','Reclaimer 0.10.0 native input 0x2f45f05','Reclaimer 0.10.0 lifted camera 0x584efe','Reclaimer 0.10.1 native input 0x30470d5','Reclaimer 0.10.1 lifted camera 0x584ede','Reclaimer 0.10.2 native input 0x37f5e44','Reclaimer 0.10.2 lifted camera 0x5b0785');checks='201 camera bases; 10,000 native hooks; 100,000 camera copies; actual F8 runtime hold/release, orbit/FOV isolation, exit, death, focus, menu lockout, vehicle identity, 128 revisited cameras and complete restoration; bounded module paths; runtime shutdown acknowledgment; PowerShell startup/cancellation/refusal/pending-load cases; actual DLL cancellation during startup; PE imports checked for absence of graphics/network libraries and HUD/mesh dependencies';multiplayer='Huge Grass multiplayer tested on Reclaimer 0.9.23 as reported by the project maintainer. Freelook 30.4.6 works in-game on Reclaimer 0.10.0 and Freelook 30.4.7 works in-game on Reclaimer 0.10.1, as reported by the project maintainer. Freelook 30.4.8 works in-game on Reclaimer 0.10.2, as reported by the project maintainer.';multiplayerWarning='Multiplayer warning (2026-11-11): a session using Freelook 30.4.8 on Reclaimer 0.10.2 was kicked for sending game data that a normal game never sends. Freelook may be the cause, but causation and cheating detection are unconfirmed. Avoid public-server use pending investigation.';cockpit=$false;visor=$false;hud=$false;graphicsHooks=$false;customAssets=$false;files=$hashes}
+  $manifest=[ordered]@{revision=30;packageVersion='30.7.1';build='r30-0108-test';profile='F8 freelook only';hooks=@('legacy input X 0x187b89','legacy input Y 0x187bb2','legacy camera 0x17eb20','Reclaimer 0.10.0 native input 0x2f45f05','Reclaimer 0.10.0 lifted camera 0x584efe','Reclaimer 0.10.1 native input 0x30470d5','Reclaimer 0.10.1 lifted camera 0x584ede','Reclaimer 0.10.2 native input 0x37f5e44','Reclaimer 0.10.2 lifted camera 0x5b0785','Reclaimer 0.10.3 native input 0x3c303a4','Reclaimer 0.10.3 render camera bridge 0x3f2d9d0','Reclaimer 0.10.4 native input 0x3d2242c','Reclaimer 0.10.4 render camera bridge 0x40763c0','Reclaimer 0.10.8 native input 0x5671a8e','Reclaimer 0.10.8 render camera bridge 0x4b5fb60');checks='0.10.3, 0.10.4 and 0.10.8 actual input and render detours with 128 frames and unchanged observer/aim fixtures; 201 camera bases; 10,000 native hooks; 100,000 camera copies; actual F8 runtime hold/release, orbit/FOV isolation, exit, death, focus, menu lockout, vehicle identity, 128 revisited cameras and complete restoration; bounded module paths; runtime shutdown acknowledgment; PowerShell startup/cancellation/refusal/pending-load cases; actual DLL cancellation during startup; PE imports checked for absence of graphics/network libraries and HUD/mesh dependencies';multiplayer='0.10.8 multiplayer NOT TESTED. Historical evidence: Huge Grass multiplayer tested on Reclaimer 0.9.23 as reported by the project maintainer. Freelook 30.4.6 works in-game on Reclaimer 0.10.0 and Freelook 30.4.7 works in-game on Reclaimer 0.10.1, as reported by the project maintainer. Freelook 30.4.8 works in-game on Reclaimer 0.10.2, as reported by the project maintainer.';multiplayerWarning='Multiplayer warning (2026-11-11): a session using Freelook 30.4.8 on Reclaimer 0.10.2 was kicked for sending game data that a normal game never sends. Freelook may be the cause, but causation and cheating detection are unconfirmed. Avoid public-server use pending investigation.';cockpit=$false;visor=$false;hud=$false;graphicsHooks=$false;customAssets=$false;files=$hashes}
   [IO.File]::WriteAllText((Join-Path $build 'manifest.json'),($manifest | ConvertTo-Json -Depth 5)+[Environment]::NewLine)
   $release=Join-Path $root 'release'
   New-Item -ItemType Directory -Path $release -Force | Out-Null
-  $zip=Join-Path $release 'Halo3-Freelook-Only-MP-r30-installer.zip'
+  $zip=Join-Path $release 'Halo3-Freelook-30.7.1-Reclaimer-0.10.8-TEST.zip'
   $paths=@($files+@('manifest.json') | ForEach-Object {Join-Path $build $_})
   Compress-Archive -LiteralPath $paths -DestinationPath $zip -Force
   Write-Output ('Freelook-only MP package ready: '+$zip)

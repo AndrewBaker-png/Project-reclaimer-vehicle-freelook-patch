@@ -13,7 +13,7 @@ $escapedOrder=$order.Replace("'","''")
 Set-Content -LiteralPath (Join-Path $package 'Start-Reclaimer-Freelook-Only.ps1') -Value ("Add-Content -LiteralPath '"+$escapedOrder+"' -Value 'loader'; exit 0")
 Set-Content -LiteralPath (Join-Path $package 'reclaimer-launcher.ini') -Value ("[Reclaimer]`r`nClient="+(Join-Path $game 'client.exe'))
 foreach($attempt in 1..2){
-  $launcher=Start-Process -FilePath (Join-Path $package 'Play-Reclaimer-with-Freelook.exe') -PassThru
+  $launcher=Start-Process -FilePath (Join-Path $package 'Play-Reclaimer-with-Freelook.exe') -WindowStyle Hidden -PassThru
   if(!$launcher.WaitForExit(15000)){throw 'Packaged launcher did not exit; check test fixture.'}
   if($launcher.ExitCode -ne 0){throw 'Packaged launcher returned an error.'}
   $deadline=[DateTime]::UtcNow.AddSeconds(10)

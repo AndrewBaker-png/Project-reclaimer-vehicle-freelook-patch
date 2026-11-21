@@ -46,7 +46,7 @@ try {
   # Reclaimer naming convention, including the case where no engine is loaded.
   $fixture=Join-Path $base 'project-reclaimer-client-fixture.exe'
   Copy-Item -LiteralPath (Join-Path $BuildDirectory 'play_client_fixture.exe') -Destination $fixture
-  $process=Start-Process -FilePath $fixture -ArgumentList '--stay-running' -PassThru
+  $process=Start-Process -FilePath $fixture -ArgumentList '--stay-running' -WindowStyle Hidden -PassThru
   try{Expect-Failure {Assert-FreelookClosed @($base)} '*Fully close*'}finally{$process.WaitForExit(6000) | Out-Null;$process.Dispose()}
   Write-Output 'PASS: production process guard detects a running client without a loaded engine.'
   function Get-FreelookRunningGames {param([string[]]$Folders);if($script:FakeGame){[pscustomobject]@{ProcessName='fake-client';Id=1}}}
